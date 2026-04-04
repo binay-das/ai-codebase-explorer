@@ -7,7 +7,10 @@ type AppShellProps = {
   children: ReactNode;
 };
 
-const navigationItems = [{ label: "Home" }, { label: "Repo" }];
+const navigationItems = [
+  { label: "Home", href: "/" },
+  { label: "Repo", href: "/repo" },
+];
 
 export function AppShell({ children }: AppShellProps) {
   return (

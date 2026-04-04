@@ -1,7 +1,10 @@
+import Link from "next/link";
+
 type SidebarProps = {
   appName: string;
   navigationItems?: ReadonlyArray<{
     label: string;
+    href: string;
   }>;
 };
 
@@ -22,9 +25,12 @@ export function Sidebar({
         <ul className="space-y-1">
           {navigationItems.map((item) => (
             <li key={item.label}>
-              <span className="flex rounded-lg px-3 py-2 text-sm font-medium text-zinc-600">
+              <Link
+                href={item.href}
+                className="flex rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-white hover:text-zinc-950"
+              >
                 {item.label}
-              </span>
+              </Link>
             </li>
           ))}
         </ul>
