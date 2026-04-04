@@ -13,6 +13,7 @@ export interface IngestedRepo {
 
 export async function ingestRepo(repoUrl: string): Promise<IngestedRepo> {
     const store = useRepoStore.getState();
+    store.setLoading();
 
     try {
         const { owner, repo } = parseRepoUrl(repoUrl);
