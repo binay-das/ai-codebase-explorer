@@ -11,6 +11,9 @@ export interface IngestedRepo {
     tree: FileNode[];
 }
 
+import { fileURLToPath } from "url";
+import { repoCache } from "../cache/repoCache";
+
 export async function ingestRepo(repoUrl: string): Promise<IngestedRepo> {
     const store = useRepoStore.getState();
     store.setLoading();
@@ -18,16 +21,25 @@ export async function ingestRepo(repoUrl: string): Promise<IngestedRepo> {
     try {
         const { owner, repo } = parseRepoUrl(repoUrl);
 
+        // check cache
+        const cached = repoCache.get(owner, repo);
+        if (cached) {
+            store.setRepoData(cached.repo, cached.tree);
+            return cached;
+        }
+
         const repoInfo = await getRepo(owner, repo);
         const rawTree = await getRepoTree(owner, repo, repoInfo.default_branch);
         const normalizedTree = normalizeTree(rawTree);
 
+        const payload: IngestedRepo = { repo: repoInfo, tree: normalizedTree };
+
+        // add to cache
+        repoCache.set(owner, repo, payload);
+
         store.setRepoData(repoInfo, normalizedTree);
 
-        return {
-            repo: repoInfo,
-            tree: normalizedTree,
-        };
+        return payload;
     } catch (error) {
         let errorMessage = "An unexpected error occurred during repository ingestion.";
 
