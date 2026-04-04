@@ -1,7 +1,7 @@
 
 import { getRepo } from "@/lib/github/getRepo";
 import { getRepoTree } from "@/lib/github/getRepoTree";
-import { FileNode, normalizeTree } from "@/lib/github/normalizeTree";
+import { FileNode, normalizeTree } from "@/lib/domain/normalizeTree";
 import { parseRepoUrl } from "@/lib/github/parseRepoUrl";
 import { RepoInfo } from "@/lib/github/types";
 import { useRepoStore } from "@/lib/store/repoStore";
@@ -11,7 +11,6 @@ export interface IngestedRepo {
     tree: FileNode[];
 }
 
-import { fileURLToPath } from "url";
 import { repoCache } from "../cache/repoCache";
 
 export async function ingestRepo(repoUrl: string): Promise<IngestedRepo> {

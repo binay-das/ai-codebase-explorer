@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { RepoInfo } from "@/lib/github/types";
-import { FileNode } from "@/lib/github/normalizeTree";
+import { FileNode } from "@/lib/domain/normalizeTree";
 
 
 interface RepoState {

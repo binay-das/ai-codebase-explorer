@@ -1,4 +1,4 @@
-import { IngestedRepo } from "../github/ingestRepo";
+import { IngestedRepo } from "../domain/ingestRepo";
 
 const cache = new Map<string, IngestedRepo>();
 
