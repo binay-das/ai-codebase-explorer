@@ -1,4 +1,39 @@
+"use client";
+
+import { githubFetch } from "@/lib/github/client";
+import { parseRepoUrl } from "@/lib/github/parseRepoUrl";
+import { RepoInfo } from "@/lib/github/types";
+import { useState } from "react";
+
 export default function Home() {
+  const [url, setUrl] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleTest = async () => {
+    setLoading(true);
+    console.log("URL: ", url);
+
+    try {
+      const parsed = parseRepoUrl(url);
+      console.log("parseRepoUrl result:", parsed);
+
+      const apiEndpoint = `repos/${parsed.owner}/${parsed.repo}`;
+      console.log(`Fetching from: ${apiEndpoint}`);
+
+      const repoData = await githubFetch<RepoInfo>(apiEndpoint);
+      console.log("githubFetch result:", repoData);
+
+      alert("Check console for successful test logs!");
+    } catch (error) {
+      console.error(" Test failed:", error);
+      if (error instanceof Error) {
+        alert(`Error: ${error.message}`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <section className="p-6">
       <div className="mx-auto flex max-w-5xl flex-col gap-6">
@@ -10,10 +45,25 @@ export default function Home() {
             Workspace overview
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-600">
-            This home route is the starting point for the application shell. It
-            gives the layout a structured landing page while additional
-            repository views are added under dedicated routes.
+            Paste a GitHub repository URL below to test the parsing and API client utilities. Open your browser console to view the detailed logs.
           </p>
+
+          <div className="mt-6 flex gap-3">
+            <input
+              type="text"
+              className="flex-1 rounded-md border border-zinc-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              placeholder="e.g., https://github.com/facebook/react"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+            />
+            <button
+              className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+              onClick={handleTest}
+              disabled={loading || !url}
+            >
+              {loading ? "Loading..." : "Get insights"}
+            </button>
+          </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
