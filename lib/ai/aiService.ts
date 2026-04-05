@@ -3,32 +3,76 @@ import { getFallbackAIProvider, getPrimaryAIProvider } from "@/lib/ai/provider";
 const primaryProvider = getPrimaryAIProvider();
 const fallbackProvider = getFallbackAIProvider();
 
-// ---------------------------------------------------------------------------
-// Retry helpers
-// ---------------------------------------------------------------------------
+type ProviderName = "primary" | "fallback";
+
+interface AIRequestLog {
+    operation: string;
+    providerName: ProviderName;
+    promptLength: number;
+    attempt: number;
+    success: boolean;
+    errorMessage?: string;
+    durationMs: number;
+}
+
+function logAIRequest(entry: AIRequestLog): void {
+    const status = entry.success ? "✓" : "✗";
+    const parts = [
+        `[AI] ${status} ${entry.operation}`,
+        `provider=${entry.providerName}`,
+        `attempt=${entry.attempt}`,
+        `promptLength=${entry.promptLength}`,
+        `duration=${entry.durationMs}ms`,
+    ];
+
+    if (!entry.success && entry.errorMessage) {
+        parts.push(`error=${entry.errorMessage}`);
+    }
+
+    console.debug(parts.join(" | "));
+}
+
 
 const MAX_RETRIES = 3;
 const RETRY_BASE_DELAY_MS = 300;
 
-/** Waits for `ms` milliseconds. */
 function delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 
-// retries fn up to MAX_RETRIES times on failure
-// using a simple exponential backoff (300ms, 600ms, 1200ms)
-// returns the first successful result
-// throws the last encountered error when all attempts are exhausted
-
-async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+async function withRetry<T>(
+    fn: () => Promise<T>,
+    operation: string,
+    providerName: ProviderName,
+    promptLength: number
+): Promise<T> {
     let lastError: unknown;
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        const start = Date.now();
         try {
-            return await fn();
+            const result = await fn();
+            logAIRequest({
+                operation,
+                providerName,
+                promptLength,
+                attempt,
+                success: true,
+                durationMs: Date.now() - start,
+            });
+            return result;
         } catch (error) {
             lastError = error;
+            logAIRequest({
+                operation,
+                providerName,
+                promptLength,
+                attempt,
+                success: false,
+                errorMessage: error instanceof Error ? error.message : "Unknown error",
+                durationMs: Date.now() - start,
+            });
 
             const isLastAttempt = attempt === MAX_RETRIES;
             if (!isLastAttempt) {
@@ -42,27 +86,53 @@ async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
 
 
 
-// tries operation(false) (primary provider) with retries
-// if all retries fail, falls through to `operation(true)` (fallback provider)
-// without additional retries
-
-async function withFallback<T>(operation: (useFallback: boolean) => Promise<T>): Promise<T> {
+async function withFallback<T>(
+    operation: string,
+    promptLength: number,
+    fn: (useFallback: boolean) => Promise<T>
+): Promise<T> {
     try {
-        return await withRetry(() => operation(false));
+        return await withRetry(() => fn(false), operation, "primary", promptLength);
     } catch {
-        return operation(true);
+        // primary exhausted — attempt fallback once (no retry on mock provider)
+        const start = Date.now();
+        try {
+            const result = await fn(true);
+            logAIRequest({
+                operation,
+                providerName: "fallback",
+                promptLength,
+                attempt: 1,
+                success: true,
+                durationMs: Date.now() - start,
+            });
+            return result;
+        } catch (fallbackError) {
+            logAIRequest({
+                operation,
+                providerName: "fallback",
+                promptLength,
+                attempt: 1,
+                success: false,
+                errorMessage:
+                    fallbackError instanceof Error ? fallbackError.message : "Unknown error",
+                durationMs: Date.now() - start,
+            });
+            throw fallbackError;
+        }
     }
 }
 
+
 export async function generateText(prompt: string, context?: string): Promise<string> {
-    return withFallback((useFallback) => {
+    return withFallback("generateText", prompt.length, (useFallback) => {
         const provider = useFallback ? fallbackProvider : primaryProvider;
         return provider.generateText({ prompt, context });
     });
 }
 
 export async function generateEmbedding(text: string): Promise<number[]> {
-    return withFallback((useFallback) => {
+    return withFallback("generateEmbedding", text.length, (useFallback) => {
         const provider = useFallback ? fallbackProvider : primaryProvider;
         return provider.generateEmbedding({ text });
     });
