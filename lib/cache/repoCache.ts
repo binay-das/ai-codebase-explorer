@@ -1,4 +1,4 @@
-import { IngestedRepo } from "../domain/ingestRepo";
+import { IngestedRepo } from "@/lib/domain/ingestRepo";
 
 const cache = new Map<string, IngestedRepo>();
 
@@ -12,7 +12,7 @@ export const repoCache = {
     has: (owner: string, repo: string): boolean => {
         return cache.has(`${owner}/${repo}`);
     },
-    clear: () => {
+    clear: (): void => {
         cache.clear();
     }
 };

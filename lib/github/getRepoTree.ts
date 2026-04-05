@@ -25,9 +25,5 @@ export async function getRepoTree(
         `repos/${owner}/${repo}/git/trees/${branch}?recursive=1`
     );
 
-    if (response.truncated) {
-        console.warn(`The file tree for ${owner}/${repo} is truncated (too large)`);
-    }
-
     return response.tree;
 }
