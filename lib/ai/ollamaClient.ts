@@ -1,16 +1,9 @@
+import type { AIProvider, GenerateEmbeddingInput, GenerateTextInput } from "@/lib/ai/types";
+
 const OLLAMA_BASE_URL = "http://localhost:11434";
 const CHAT_MODEL = "llama3.2";
 const EMBEDDING_MODEL = "nomic-embed-text";
 const REQUEST_TIMEOUT_MS = 15_000;
-
-interface GenerateTextInput {
-    prompt: string;
-    context?: string;
-}
-
-interface GenerateEmbeddingInput {
-    text: string;
-}
 
 interface OllamaGenerateResponse {
     response?: unknown;
@@ -125,7 +118,7 @@ function parseEmbedding(data: OllamaEmbeddingResponse): number[] {
     return data.embedding;
 }
 
-export class OllamaProvider {
+export class OllamaProvider implements AIProvider {
     async generateText(input: GenerateTextInput): Promise<string> {
         const prompt = buildPrompt(input);
         const data = await postToOllama<OllamaGenerateResponse>("/api/generate", {
