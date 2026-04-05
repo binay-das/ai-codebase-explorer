@@ -59,20 +59,16 @@ function extractSection(text: string, ...labels: string[]): string {
     );
 
     const match = sectionPattern.exec(text);
-    if (match && match[1]) {
-        return match[1].trim();
-    }
-    return "";
+    return match?.[1]?.trim() ?? "";
 }
- 
+
 
 // trims and de-junks raw AI text without structural parsing
 // use when we only need a clean string, not section breakdown
 
 export function normalizeRawResponse(raw: string): string {
     if (typeof raw !== "string") return "";
-    const stripped = stripJunkLines(raw);
-    return collapseBlankLines(stripped);
+    return collapseBlankLines(stripJunkLines(raw));
 }
 
 // parses a structured AI explanation into discrete sections.
@@ -97,10 +93,7 @@ export function parseExplanationResponse(raw: string): ExplanationSections {
         "How it fits"
     );
 
-    // if section parsing failed entirely, surface the whole cleaned response
-    // as the purpose so the UI always has something meaningful to show.
-    const allEmpty =
-        !purpose && !keyComponents && !dependencies && !projectRole;
+    const allEmpty = !purpose && !keyComponents && !dependencies && !projectRole;
 
     return {
         purpose: allEmpty ? cleaned : purpose,

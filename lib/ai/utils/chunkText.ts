@@ -19,6 +19,7 @@ export function chunkText(text: string, maxChars: number = 3_000): string[] {
                 chunks.push(current);
                 current = line;
             } else {
+                // Single line longer than maxChars — hard split
                 chunks.push(line.slice(0, maxChars));
                 current = line.slice(maxChars);
             }
