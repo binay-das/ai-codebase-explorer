@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { askRepo } from "@/lib/ai/repoChat";
+import ReactMarkdown from "react-markdown";
 
 type Message = {
     role: "user" | "assistant";
@@ -58,14 +59,38 @@ export default function ChatPanel() {
                     >
                         <div
                             className={`max-w-[85%] p-3 rounded-lg ${m.role === "user"
-                                ? "bg-blue-600 text-white"
-                                : "bg-slate-800 text-slate-100 border border-slate-700"
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-slate-800 text-slate-100 border border-slate-700"
                                 }`}
                         >
                             <div className="text-xs font-bold mb-1 uppercase opacity-50">
                                 {m.role}
                             </div>
-                            <div className="whitespace-pre-wrap">{m.content}</div>
+                            {m.role === "user" ? (
+                                <div className="whitespace-pre-wrap">{m.content}</div>
+                            ) : (
+                                <ReactMarkdown
+                                    className="prose prose-invert max-w-none prose-p:my-0 prose-pre:bg-slate-950 prose-pre:p-2 prose-pre:rounded prospect-code:text-blue-300"
+                                    components={{
+                                        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                                        ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
+                                        ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
+                                        li: ({ children }) => <li className="mb-1">{children}</li>,
+                                        code: ({ children }) => (
+                                            <code className="bg-slate-950 text-blue-300 px-1 rounded text-sm font-mono leading-relaxed">
+                                                {children}
+                                            </code>
+                                        ),
+                                        pre: ({ children }) => (
+                                            <pre className="bg-slate-950 p-4 rounded-md overflow-x-auto border border-slate-700 mb-2 mt-2">
+                                                {children}
+                                            </pre>
+                                        )
+                                    }}
+                                >
+                                    {m.content}
+                                </ReactMarkdown>
+                            )}
                         </div>
                     </div>
                 ))}
