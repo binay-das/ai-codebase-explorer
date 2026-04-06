@@ -1,0 +1,93 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import { askRepo } from "@/lib/ai/repoChat";
+
+type Message = {
+    role: "user" | "assistant";
+    content: string;
+};
+
+export default function ChatPanel() {
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [input, setInput] = useState("");
+    const [loading, setLoading] = useState(false);
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    // scroll to the bottom when messages change
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+    }, [messages]);
+
+    const handleSubmit = async (e?: React.FormEvent) => {
+        e?.preventDefault();
+        if (!input.trim() || loading) return;
+
+        const userMessage: Message = { role: "user", content: input };
+        setMessages((prev) => [...prev, userMessage]);
+        setInput("");
+        setLoading(true);
+
+        const response = await askRepo(userMessage.content);
+        const assistantMessage: Message = { role: "assistant", content: response };
+        setMessages((prev) => [...prev, assistantMessage]);
+        setLoading(false);
+    };
+
+    return (
+        <div className="flex flex-col h-full bg-slate-900 text-slate-100 p-4 rounded-lg shadow-xl border border-slate-700">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                Ask Repository
+            </h2>
+
+            <div
+                className="grow overflow-y-auto mb-4 space-y-4 pr-2 custom-scrollbar"
+                ref={scrollRef}
+            >
+                {messages.length === 0 && (
+                    <div className="text-slate-500 text-center mt-10">
+                        exploration. ask a question about the codebase.
+                    </div>
+                )}
+                {messages.map((m, i) => (
+                    <div
+                        key={i}
+                        className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+                    >
+                        <div
+                            className={`max-w-[85%] p-3 rounded-lg ${m.role === "user"
+                                ? "bg-blue-600 text-white"
+                                : "bg-slate-800 text-slate-100 border border-slate-700"
+                                }`}
+                        >
+                            <div className="text-xs font-bold mb-1 uppercase opacity-50">
+                                {m.role}
+                            </div>
+                            <div className="whitespace-pre-wrap">{m.content}</div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <form onSubmit={handleSubmit} className="flex gap-2">
+                <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="ask a question..."
+                    disabled={loading}
+                    className="grow p-3 rounded bg-slate-800 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                />
+                <button
+                    type="submit"
+                    disabled={loading}
+                    className="bg-blue-600 hover:bg-blue-700 p-3 px-6 rounded font-bold transition disabled:opacity-50"
+                >
+                    {loading ? "..." : "send"}
+                </button>
+            </form>
+        </div>
+    );
+}
