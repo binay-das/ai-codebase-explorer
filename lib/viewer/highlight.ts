@@ -30,6 +30,7 @@ export async function tokenizeCode(
         const availableLangs = hl.getLoadedLanguages();
         const lang = availableLangs.includes(language) ? language : "plaintext";
 
+        // @ts-ignore
         return await hl.codeToTokensBase(code, { lang, theme: "github-light" });
     } catch {
         return code.split("\n").map((line) => [

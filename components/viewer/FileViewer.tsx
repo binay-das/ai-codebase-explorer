@@ -272,7 +272,7 @@ export const FileViewer = memo(function FileViewer() {
         let cancelled = false;
 
         async function load() {
-            if (isBinaryFile(selectedFilePath)) {
+            if (isBinaryFile(selectedFilePath as string)) {
                 if (!cancelled) {
                     setState({ ...initialState, status: "binary" });
                 }
