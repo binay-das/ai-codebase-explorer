@@ -6,6 +6,7 @@ import { RepoInfo } from "@/lib/github/types";
 import { useRepoStore } from "@/lib/store/repoStore";
 import { FileNode, normalizeTree } from "./normalizeTree";
 import { repoCache } from "../cache/repoCache";
+import { chatCache } from "../cache/chatCache";
 
 export interface IngestedRepo {
     repo: RepoInfo;
@@ -18,6 +19,11 @@ export async function ingestRepo(repoUrl: string): Promise<IngestedRepo> {
 
     try {
         const { owner, repo } = parseRepoUrl(repoUrl);
+        const repoKey = `${owner}/${repo}`;
+
+        if (store.repo?.full_name !== repoKey) {
+            chatCache.clear();
+        }
 
         // check cache
         const cached = repoCache.get(owner, repo);

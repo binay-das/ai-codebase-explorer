@@ -2,6 +2,7 @@ import { generateEmbedding, generateText } from "@/lib/ai/aiService";
 import { retrieveTopK } from "@/lib/ai/retrieval/retrieve";
 import { buildContext } from "@/lib/ai/retrieval/buildContext";
 import { buildRagPrompt } from "@/lib/ai/prompts/ragPrompt";
+import { chatCache } from "@/lib/cache/chatCache";
 
 const errorMsg = "i'm sorry, i encountered an error while searching the repository. please try again later.";
 
@@ -31,6 +32,12 @@ function toSnippet(content: string): string {
 // query the repository using a rag pipeline with error handling
 export async function askRepo(question: string): Promise<AskRepoResult> {
     try {
+        const cached = chatCache.get(question);
+
+        if (cached) {
+            return cached;
+        }
+
         const queryVector = await generateEmbedding(question);
         const topChunks = retrieveTopK(queryVector, 10);
         const context = buildContext(topChunks);
@@ -42,7 +49,9 @@ export async function askRepo(question: string): Promise<AskRepoResult> {
             score: chunk.score,
         }));
 
-        return { answer, sources };
+        const result = { answer, sources };
+        chatCache.set(question, result);
+        return result;
     } catch (error) {
         console.error("error in askRepo:", error);
         return {
