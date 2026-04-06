@@ -2,10 +2,13 @@ import { create } from "zustand";
 
 interface ExplorerState {
     selectedFilePath: string | null;
-    setSelectedFile: (path: string) => void;
+    highlightedSnippet: string | null;
+    setSelectedFile: (path: string, snippet?: string | null) => void;
 }
 
 export const useExplorerStore = create<ExplorerState>((set) => ({
     selectedFilePath: null,
-    setSelectedFile: (path) => set({ selectedFilePath: path }),
+    highlightedSnippet: null,
+    setSelectedFile: (path, snippet = null) =>
+        set({ selectedFilePath: path, highlightedSnippet: snippet }),
 }));

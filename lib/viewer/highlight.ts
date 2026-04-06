@@ -1,4 +1,4 @@
-import { createHighlighter, type Highlighter } from "shiki";
+import { createHighlighter, type Highlighter, type ThemedToken } from "shiki";
 
 let highlighterPromise: Promise<Highlighter> | null = null;
 
@@ -18,10 +18,11 @@ function getHighlighter(): Promise<Highlighter> {
     return highlighterPromise;
 }
 
-export async function highlightCode(
+// tokenize code for viewer rendering
+export async function tokenizeCode(
     code: string,
     language: string
-): Promise<string> {
+): Promise<ThemedToken[][]> {
     try {
         const hl = await getHighlighter();
 
@@ -29,18 +30,13 @@ export async function highlightCode(
         const availableLangs = hl.getLoadedLanguages();
         const lang = availableLangs.includes(language) ? language : "plaintext";
 
-        return hl.codeToHtml(code, { lang, theme: "github-light" });
+        return await hl.codeToTokensBase(code, { lang, theme: "github-light" });
     } catch {
-        // Return escaped plain text as fallback
-        return `<pre><code>${escapeHtml(code)}</code></pre>`;
+        return code.split("\n").map((line) => [
+            {
+                content: line,
+                offset: 0,
+            },
+        ]);
     }
-}
-
-function escapeHtml(text: string): string {
-    return text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
 }

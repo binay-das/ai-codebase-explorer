@@ -112,7 +112,7 @@ export default function ChatPanel() {
                                                     >
                                                         <button
                                                             type="button"
-                                                            onClick={() => setSelectedFile(source.filePath)}
+                                                            onClick={() => setSelectedFile(source.filePath, source.snippet)}
                                                             className="text-left text-sm font-medium text-blue-300 transition hover:text-blue-200 hover:underline"
                                                         >
                                                             {source.filePath}

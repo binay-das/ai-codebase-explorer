@@ -1,18 +1,20 @@
 "use client";
 
-import { useEffect, useState, memo, useCallback } from "react";
+import { useEffect, useState, memo, useCallback, useMemo, useRef } from "react";
 import { useExplorerStore } from "@/lib/store/explorerStore";
 import { fetchFileForViewer, MAX_LINES } from "@/lib/services/fileService";
 import { detectLanguage, isBinaryFile } from "@/lib/viewer/detectLanguage";
-import { highlightCode } from "@/lib/viewer/highlight";
+import { tokenizeCode } from "@/lib/viewer/highlight";
 import { explainFile, type ExplainFileResult } from "@/lib/ai/explainFile";
+import type { CSSProperties } from "react";
+import type { ThemedToken } from "shiki";
 
 
 type ViewerStatus = "idle" | "loading" | "ready" | "error" | "binary";
 
 interface ViewerState {
     status: ViewerStatus;
-    html: string;
+    tokens: ThemedToken[][];
     rawContent: string;      // kept to pass to AI without re-fetching
     error: string;
     truncated: boolean;
@@ -22,7 +24,7 @@ interface ViewerState {
 
 const initialState: ViewerState = {
     status: "idle",
-    html: "",
+    tokens: [],
     rawContent: "",
     error: "",
     truncated: false,
@@ -41,6 +43,68 @@ interface AIState {
 }
 
 const aiInitial: AIState = { status: "idle", result: null, error: "" };
+
+type HighlightRange = {
+    start: number;
+    end: number;
+};
+
+// collapse whitespace for source matching
+function normalizeSnippet(text: string): string {
+    return text.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+// find the visible lines that best match a source snippet
+function findHighlightRange(content: string, snippet: string | null): HighlightRange | null {
+    if (!snippet) {
+        return null;
+    }
+
+    const lines = content.split("\n");
+    const needle = normalizeSnippet(snippet);
+
+    if (!needle) {
+        return null;
+    }
+
+    for (let start = 0; start < lines.length; start++) {
+        let window = "";
+
+        for (let end = start; end < Math.min(lines.length, start + 12); end++) {
+            window = `${window} ${lines[end]}`.trim();
+
+            if (normalizeSnippet(window).includes(needle)) {
+                return { start: start + 1, end: end + 1 };
+            }
+        }
+    }
+
+    const fallback = needle.slice(0, 80).trim();
+
+    if (!fallback) {
+        return null;
+    }
+
+    const lineIndex = lines.findIndex((line) => normalizeSnippet(line).includes(fallback));
+
+    if (lineIndex === -1) {
+        return null;
+    }
+
+    return { start: lineIndex + 1, end: lineIndex + 1 };
+}
+
+// build inline styles for highlighted code tokens
+function getTokenStyle(token: ThemedToken): CSSProperties {
+    return {
+        color: token.htmlStyle?.color ?? token.color,
+        backgroundColor: token.htmlStyle?.backgroundColor ?? token.bgColor,
+        fontStyle: token.fontStyle === 1 ? "italic" : undefined,
+        fontWeight: token.fontStyle === 2 ? 700 : undefined,
+        textDecoration: token.fontStyle === 4 ? "underline" : undefined,
+        ...token.htmlStyle,
+    };
+}
 
 
 function EmptyState() {
@@ -193,9 +257,10 @@ function ExplanationPanel({ aiState, onRequestExplain, canExplain }: Explanation
 
 
 export const FileViewer = memo(function FileViewer() {
-    const { selectedFilePath } = useExplorerStore();
+    const { selectedFilePath, highlightedSnippet } = useExplorerStore();
     const [state, setState] = useState<ViewerState>(initialState);
     const [aiState, setAIState] = useState<AIState>(aiInitial);
+    const viewerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setAIState(aiInitial);
@@ -231,13 +296,13 @@ export const FileViewer = memo(function FileViewer() {
                 }
 
                 const language = detectLanguage(selectedFilePath!);
-                const html = await highlightCode(content, language);
+                const tokens = await tokenizeCode(content, language);
 
                 if (cancelled) return;
 
                 setState({
                     status: "ready",
-                    html,
+                    tokens,
                     rawContent: content,
                     truncated,
                     tooLarge: false,
@@ -261,6 +326,23 @@ export const FileViewer = memo(function FileViewer() {
             cancelled = true;
         };
     }, [selectedFilePath]);
+
+    const highlightRange = useMemo(
+        () => findHighlightRange(state.rawContent, highlightedSnippet),
+        [highlightedSnippet, state.rawContent]
+    );
+
+    useEffect(() => {
+        if (state.status !== "ready" || !highlightRange || !viewerRef.current) {
+            return;
+        }
+
+        const target = viewerRef.current.querySelector<HTMLElement>(
+            `[data-line-number="${highlightRange.start}"]`
+        );
+
+        target?.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, [highlightRange, state.status]);
 
     // AI explanation handler
     const handleExplain = useCallback(async () => {
@@ -337,11 +419,42 @@ export const FileViewer = memo(function FileViewer() {
                                 Showing first {MAX_LINES} lines — file truncated for performance.
                             </div>
                         )}
-                        {/* Shiki renders its own <pre><code> with inline colors */}
                         <div
-                            className="h-full overflow-auto text-sm [&>pre]:h-full [&>pre]:overflow-auto [&>pre]:p-4 [&>pre]:font-mono [&>pre]:text-xs [&>pre]:leading-5"
-                            dangerouslySetInnerHTML={{ __html: state.html }}
-                        />
+                            ref={viewerRef}
+                            className="h-full overflow-auto bg-white px-4 py-4 font-mono text-xs leading-5"
+                        >
+                            <pre className="min-h-full">
+                                {state.tokens.map((lineTokens, index) => {
+                                    const lineNumber = index + 1;
+                                    const isHighlighted =
+                                        !!highlightRange &&
+                                        lineNumber >= highlightRange.start &&
+                                        lineNumber <= highlightRange.end;
+
+                                    return (
+                                        <div
+                                            key={lineNumber}
+                                            data-line-number={lineNumber}
+                                            className={[
+                                                "grid grid-cols-[3rem,minmax(0,1fr)] rounded px-2 transition-colors",
+                                                isHighlighted ? "bg-amber-50 ring-1 ring-amber-200/70" : "",
+                                            ].join(" ")}
+                                        >
+                                            <span className="select-none pr-4 text-right text-zinc-400">
+                                                {lineNumber}
+                                            </span>
+                                            <span className="whitespace-pre-wrap break-words">
+                                                {lineTokens.length === 0 ? " " : lineTokens.map((token, tokenIndex) => (
+                                                    <span key={`${lineNumber}-${tokenIndex}`} style={getTokenStyle(token)}>
+                                                        {token.content}
+                                                    </span>
+                                                ))}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </pre>
+                        </div>
                     </div>
                 )}
             </div>
