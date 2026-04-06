@@ -40,9 +40,10 @@ interface AIState {
     status: AIStatus;
     result: ExplainFileResult | null;
     error: string;
+    filePath: string | null;
 }
 
-const aiInitial: AIState = { status: "idle", result: null, error: "" };
+const aiInitial: AIState = { status: "idle", result: null, error: "", filePath: null };
 
 type HighlightRange = {
     start: number;
@@ -261,26 +262,23 @@ export const FileViewer = memo(function FileViewer() {
     const [state, setState] = useState<ViewerState>(initialState);
     const [aiState, setAIState] = useState<AIState>(aiInitial);
     const viewerRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        setAIState(aiInitial);
-    }, [selectedFilePath]);
+    const visibleAIState = aiState.filePath === selectedFilePath ? aiState : aiInitial;
 
     useEffect(() => {
         if (!selectedFilePath) {
-            setState(initialState);
-            return;
-        }
-
-        // binary shortcut — no fetch needed
-        if (isBinaryFile(selectedFilePath)) {
-            setState({ ...initialState, status: "binary" });
             return;
         }
 
         let cancelled = false;
 
         async function load() {
+            if (isBinaryFile(selectedFilePath)) {
+                if (!cancelled) {
+                    setState({ ...initialState, status: "binary" });
+                }
+                return;
+            }
+
             setState({ ...initialState, status: "loading" });
 
             try {
@@ -348,15 +346,15 @@ export const FileViewer = memo(function FileViewer() {
     const handleExplain = useCallback(async () => {
         if (!selectedFilePath || !state.rawContent) return;
 
-        setAIState({ status: "loading", result: null, error: "" });
+        setAIState({ status: "loading", result: null, error: "", filePath: selectedFilePath });
 
         try {
             const result = await explainFile(state.rawContent, selectedFilePath);
-            setAIState({ status: "done", result, error: "" });
+            setAIState({ status: "done", result, error: "", filePath: selectedFilePath });
         } catch (err) {
             const msg =
                 err instanceof Error ? err.message : "Failed to generate explanation.";
-            setAIState({ status: "error", result: null, error: msg });
+            setAIState({ status: "error", result: null, error: msg, filePath: selectedFilePath });
         }
     }, [selectedFilePath, state.rawContent]);
 
@@ -461,7 +459,7 @@ export const FileViewer = memo(function FileViewer() {
 
             {selectedFilePath && state.status !== "binary" && (
                 <ExplanationPanel
-                    aiState={aiState}
+                    aiState={visibleAIState}
                     onRequestExplain={handleExplain}
                     canExplain={canExplain}
                 />
