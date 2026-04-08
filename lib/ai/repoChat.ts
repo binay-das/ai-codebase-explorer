@@ -1,5 +1,8 @@
 import { generateEmbedding, generateText } from "@/lib/ai/aiService";
-import { retrieveTopK } from "@/lib/ai/retrieval/retrieve";
+import {
+    assessRetrieval,
+    type RetrievalStatus,
+} from "@/lib/ai/retrieval/retrieve";
 import { buildContext } from "@/lib/ai/retrieval/buildContext";
 import { buildRagPrompt } from "@/lib/ai/prompts/ragPrompt";
 import { chatCache } from "@/lib/cache/chatCache";
@@ -15,6 +18,7 @@ export type AskRepoSource = {
 export type AskRepoResult = {
     answer: string;
     sources: AskRepoSource[];
+    retrievalStatus: RetrievalStatus;
 };
 
 // build a compact snippet from a retrieved chunk
@@ -29,6 +33,28 @@ function toSnippet(content: string): string {
     return `${normalized.slice(0, maxLength).trimEnd()}...`;
 }
 
+function buildFallbackAnswer(status: RetrievalStatus): string {
+    switch (status) {
+        case "empty_index":
+            return [
+                "I couldn't find any indexed repository content to search yet.",
+                "Try ingesting and indexing the repository before asking a codebase question.",
+            ].join("\n\n");
+        case "no_match":
+            return [
+                "I couldn't find any relevant repository context for that question.",
+                "Try using exact filenames, symbols, directories, or error messages so I can retrieve a closer match.",
+            ].join("\n\n");
+        case "low_confidence":
+            return [
+                "I found a few possible matches, but they weren't strong enough to answer reliably.",
+                "Please rephrase with a more specific file path, function name, class name, or code snippet.",
+            ].join("\n\n");
+        case "ready":
+            return "";
+    }
+}
+
 // query the repository using a rag pipeline with error handling
 export async function askRepo(question: string): Promise<AskRepoResult> {
     try {
@@ -39,17 +65,42 @@ export async function askRepo(question: string): Promise<AskRepoResult> {
         }
 
         const queryVector = await generateEmbedding(question);
-        const topChunks = retrieveTopK(queryVector, 10);
-        const context = buildContext(topChunks);
+        const retrieval = assessRetrieval(queryVector, 10);
+
+        if (retrieval.status !== "ready") {
+            const result = {
+                answer: buildFallbackAnswer(retrieval.status),
+                sources: [],
+                retrievalStatus: retrieval.status,
+            };
+            chatCache.set(question, result);
+            return result;
+        }
+
+        const context = buildContext(retrieval.results);
+        if (!context.trim()) {
+            const result = {
+                answer: buildFallbackAnswer("no_match"),
+                sources: [],
+                retrievalStatus: "no_match" as const,
+            };
+            chatCache.set(question, result);
+            return result;
+        }
+
         const prompt = buildRagPrompt(question, context);
-        const answer = await generateText(prompt);
-        const sources = topChunks.slice(0, 4).map((chunk) => ({
+        const answer = await generateText(prompt, context);
+        const sources = retrieval.results.slice(0, 4).map((chunk) => ({
             filePath: chunk.filePath,
             snippet: toSnippet(chunk.content),
             score: chunk.score,
         }));
 
-        const result = { answer, sources };
+        const result = {
+            answer,
+            sources,
+            retrievalStatus: "ready" as const,
+        };
         chatCache.set(question, result);
         return result;
     } catch (error) {
@@ -57,6 +108,7 @@ export async function askRepo(question: string): Promise<AskRepoResult> {
         return {
             answer: errorMsg,
             sources: [],
+            retrievalStatus: "no_match",
         };
     }
 }
