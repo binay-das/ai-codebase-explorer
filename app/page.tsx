@@ -3,16 +3,19 @@
 import { useRepoStore } from "@/lib/store/repoStore";
 import { ingestRepo } from "@/lib/domain/ingestRepo";
 import { useState } from "react";
+import { FileTree } from "@/components/explorer/FileTree";
+import { FileViewer } from "@/components/viewer/FileViewer";
+import ChatPanel from "@/components/chat/ChatPanel";
 
 export default function Home() {
   const [url, setUrl] = useState("");
-  const { repo, status, error, reset } = useRepoStore();
+  const { repo, tree, status, error, reset } = useRepoStore();
 
   const handleIngest = async () => {
     if (!url) return;
     try {
       await ingestRepo(url);
-    } catch (e) {
+    } catch {
     }
   };
 
@@ -104,6 +107,26 @@ export default function Home() {
                   </p>
                 </div>
               </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[280px_minmax(0,1fr)_380px]">
+              <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-zinc-900">Files</h3>
+                  <span className="text-xs text-zinc-400">
+                    {tree?.length ?? 0} root items
+                  </span>
+                </div>
+                <div className="max-h-[640px] overflow-y-auto pr-1">
+                  {tree ? <FileTree nodes={tree} /> : null}
+                </div>
+              </div>
+
+              <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+                <FileViewer />
+              </div>
+
+              <ChatPanel />
             </div>
           </div>
         ) : (

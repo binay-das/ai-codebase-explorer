@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { askRepo, type AskRepoSource } from "@/lib/ai/repoChat";
+import {
+    askRepo,
+    type AskRepoSource,
+    type AskRepoResult,
+} from "@/lib/ai/repoChat";
 import { useExplorerStore } from "@/lib/store/explorerStore";
 import ReactMarkdown from "react-markdown";
 
@@ -9,7 +13,39 @@ type Message = {
     role: "user" | "assistant";
     content: string;
     sources?: AskRepoSource[];
+    retrievalStatus?: AskRepoResult["retrievalStatus"];
 };
+
+function RetrievalStatusBadge({
+    status,
+}: {
+    status: AskRepoResult["retrievalStatus"];
+}) {
+    const labelMap: Record<AskRepoResult["retrievalStatus"], string> = {
+        ready: "Grounded",
+        empty_index: "No Index",
+        no_match: "No Match",
+        low_confidence: "Low Confidence",
+    };
+
+    const toneMap: Record<AskRepoResult["retrievalStatus"], string> = {
+        ready: "border-emerald-200 bg-emerald-50 text-emerald-700",
+        empty_index: "border-zinc-200 bg-zinc-100 text-zinc-600",
+        no_match: "border-amber-200 bg-amber-50 text-amber-700",
+        low_confidence: "border-amber-200 bg-amber-50 text-amber-700",
+    };
+
+    return (
+        <span
+            className={[
+                "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.16em]",
+                toneMap[status],
+            ].join(" ")}
+        >
+            {labelMap[status]}
+        </span>
+    );
+}
 
 export default function ChatPanel() {
     const [messages, setMessages] = useState<Message[]>([]);
@@ -39,24 +75,28 @@ export default function ChatPanel() {
             role: "assistant",
             content: response.answer,
             sources: response.sources,
+            retrievalStatus: response.retrievalStatus,
         };
         setMessages((prev) => [...prev, assistantMessage]);
         setLoading(false);
     };
 
     return (
-        <div className="flex flex-col h-full bg-slate-900 text-slate-100 p-4 rounded-lg shadow-xl border border-slate-700">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+        <div className="flex h-full min-h-[420px] flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <h2 className="mb-1 text-lg font-semibold text-zinc-950">
                 Ask Repository
             </h2>
+            <p className="mb-4 text-sm leading-6 text-zinc-500">
+                Ask about files, symbols, or behavior. Retrieval status is shown on each answer.
+            </p>
 
             <div
-                className="grow overflow-y-auto mb-4 space-y-4 pr-2 custom-scrollbar"
+                className="grow space-y-4 overflow-y-auto pr-1"
                 ref={scrollRef}
             >
                 {messages.length === 0 && (
-                    <div className="text-slate-500 text-center mt-10">
-                        exploration. ask a question about the codebase.
+                    <div className="mt-10 text-center text-sm text-zinc-400">
+                        Ask a repository question to see grounded answers and fallback states.
                     </div>
                 )}
                 {messages.map((m, i) => (
@@ -65,32 +105,35 @@ export default function ChatPanel() {
                         className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
                     >
                         <div
-                            className={`max-w-[85%] p-3 rounded-lg ${m.role === "user"
-                                    ? "bg-blue-600 text-white"
-                                    : "bg-slate-800 text-slate-100 border border-slate-700"
+                            className={`max-w-[85%] rounded-2xl p-3 ${m.role === "user"
+                                    ? "bg-zinc-900 text-white"
+                                    : "border border-zinc-200 bg-zinc-50 text-zinc-900"
                                 }`}
                         >
-                            <div className="text-xs font-bold mb-1 uppercase opacity-50">
+                            <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.16em] opacity-50">
                                 {m.role}
                             </div>
                             {m.role === "user" ? (
                                 <div className="whitespace-pre-wrap">{m.content}</div>
                             ) : (
                                 <div className="space-y-3">
+                                    {m.retrievalStatus && (
+                                        <RetrievalStatusBadge status={m.retrievalStatus} />
+                                    )}
                                     <ReactMarkdown
-                                        className="prose prose-invert max-w-none prose-p:my-0 prose-pre:bg-slate-950 prose-pre:p-2 prose-pre:rounded prospect-code:text-blue-300"
+                                        className="prose max-w-none prose-zinc prose-p:my-0 prose-pre:rounded prose-pre:bg-zinc-950 prose-pre:p-2"
                                         components={{
-                                            p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                                            ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
-                                            ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
+                                            p: ({ children }) => <p className="mb-2 last:mb-0 text-sm leading-6 text-zinc-700">{children}</p>,
+                                            ul: ({ children }) => <ul className="mb-2 list-disc pl-4 text-sm leading-6 text-zinc-700">{children}</ul>,
+                                            ol: ({ children }) => <ol className="mb-2 list-decimal pl-4 text-sm leading-6 text-zinc-700">{children}</ol>,
                                             li: ({ children }) => <li className="mb-1">{children}</li>,
                                             code: ({ children }) => (
-                                                <code className="bg-slate-950 text-blue-300 px-1 rounded text-sm font-mono leading-relaxed">
+                                                <code className="rounded bg-zinc-950 px-1 text-sm font-mono leading-relaxed text-blue-300">
                                                     {children}
                                                 </code>
                                             ),
                                             pre: ({ children }) => (
-                                                <pre className="bg-slate-950 p-4 rounded-md overflow-x-auto border border-slate-700 mb-2 mt-2">
+                                                <pre className="mb-2 mt-2 overflow-x-auto rounded-md border border-zinc-800 bg-zinc-950 p-4">
                                                     {children}
                                                 </pre>
                                             )
@@ -100,24 +143,24 @@ export default function ChatPanel() {
                                     </ReactMarkdown>
 
                                     {!!m.sources?.length && (
-                                        <div className="rounded-md border border-slate-700/80 bg-slate-900/70 p-3">
-                                            <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                                        <div className="rounded-xl border border-zinc-200 bg-white p-3">
+                                            <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-400">
                                                 sources
                                             </div>
                                             <div className="space-y-2">
                                                 {m.sources.map((source) => (
                                                     <div
                                                         key={`${source.filePath}-${source.snippet}`}
-                                                        className="rounded-md border border-slate-700 bg-slate-950/70 px-3 py-2"
+                                                        className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2"
                                                     >
                                                         <button
                                                             type="button"
                                                             onClick={() => setSelectedFile(source.filePath, source.snippet)}
-                                                            className="text-left text-sm font-medium text-blue-300 transition hover:text-blue-200 hover:underline"
+                                                            className="text-left text-sm font-medium text-blue-700 transition hover:text-blue-800 hover:underline"
                                                         >
                                                             {source.filePath}
                                                         </button>
-                                                        <p className="mt-1 text-sm leading-6 text-slate-300">
+                                                        <p className="mt-1 text-sm leading-6 text-zinc-600">
                                                             {source.snippet}
                                                         </p>
                                                     </div>
@@ -137,16 +180,16 @@ export default function ChatPanel() {
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="ask a question..."
+                    placeholder="Ask about a file, symbol, or behavior..."
                     disabled={loading}
-                    className="grow p-3 rounded bg-slate-800 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                    className="grow rounded-xl border border-zinc-300 bg-white p-3 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50"
                 />
                 <button
                     type="submit"
                     disabled={loading}
-                    className="bg-blue-600 hover:bg-blue-700 p-3 px-6 rounded font-bold transition disabled:opacity-50"
+                    className="rounded-xl bg-zinc-900 p-3 px-5 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-50"
                 >
-                    {loading ? "..." : "send"}
+                    {loading ? "..." : "Ask"}
                 </button>
             </form>
         </div>
