@@ -1,11 +1,27 @@
-import { generateEmbedding } from "@/lib/ai/aiService"
+import { generateEmbedding } from "@/lib/ai/aiService";
 
-// generate embeddings for file chunks
+const EMBEDDING_BATCH_SIZE = 4;
+
+function toBatches<T>(items: T[], batchSize: number): T[][] {
+    const batches: T[][] = [];
+
+    for (let index = 0; index < items.length; index += batchSize) {
+        batches.push(items.slice(index, index + batchSize));
+    }
+
+    return batches;
+}
+
+// generate embeddings for file chunks in small concurrent batches
 export async function generateEmbeddings(chunks: string[]): Promise<number[][]> {
     const vectors: number[][] = [];
-    for (const chunk of chunks) {
-        const vec = await generateEmbedding(chunk);
-        vectors.push(vec);
+
+    for (const batch of toBatches(chunks, EMBEDDING_BATCH_SIZE)) {
+        const batchVectors = await Promise.all(
+            batch.map((chunk) => generateEmbedding(chunk))
+        );
+        vectors.push(...batchVectors);
     }
+
     return vectors;
 }
