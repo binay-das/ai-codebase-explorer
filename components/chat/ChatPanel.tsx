@@ -120,27 +120,28 @@ export default function ChatPanel() {
                                     {m.retrievalStatus && (
                                         <RetrievalStatusBadge status={m.retrievalStatus} />
                                     )}
-                                    <ReactMarkdown
-                                        className="prose max-w-none prose-zinc prose-p:my-0 prose-pre:rounded prose-pre:bg-zinc-950 prose-pre:p-2"
-                                        components={{
-                                            p: ({ children }) => <p className="mb-2 last:mb-0 text-sm leading-6 text-zinc-700">{children}</p>,
-                                            ul: ({ children }) => <ul className="mb-2 list-disc pl-4 text-sm leading-6 text-zinc-700">{children}</ul>,
-                                            ol: ({ children }) => <ol className="mb-2 list-decimal pl-4 text-sm leading-6 text-zinc-700">{children}</ol>,
-                                            li: ({ children }) => <li className="mb-1">{children}</li>,
-                                            code: ({ children }) => (
-                                                <code className="rounded bg-zinc-950 px-1 text-sm font-mono leading-relaxed text-blue-300">
-                                                    {children}
-                                                </code>
-                                            ),
-                                            pre: ({ children }) => (
-                                                <pre className="mb-2 mt-2 overflow-x-auto rounded-md border border-zinc-800 bg-zinc-950 p-4">
-                                                    {children}
-                                                </pre>
-                                            )
-                                        }}
-                                    >
-                                        {m.content}
-                                    </ReactMarkdown>
+                                    <div className="prose max-w-none prose-zinc prose-p:my-0 prose-pre:rounded prose-pre:bg-zinc-950 prose-pre:p-2">
+                                        <ReactMarkdown
+                                            components={{
+                                                p: ({ children }) => <p className="mb-2 last:mb-0 text-sm leading-6 text-zinc-700">{children}</p>,
+                                                ul: ({ children }) => <ul className="mb-2 list-disc pl-4 text-sm leading-6 text-zinc-700">{children}</ul>,
+                                                ol: ({ children }) => <ol className="mb-2 list-decimal pl-4 text-sm leading-6 text-zinc-700">{children}</ol>,
+                                                li: ({ children }) => <li className="mb-1">{children}</li>,
+                                                code: ({ children }) => (
+                                                    <code className="rounded bg-zinc-950 px-1 text-sm font-mono leading-relaxed text-blue-300">
+                                                        {children}
+                                                    </code>
+                                                ),
+                                                pre: ({ children }) => (
+                                                    <pre className="mb-2 mt-2 overflow-x-auto rounded-md border border-zinc-800 bg-zinc-950 p-4">
+                                                        {children}
+                                                    </pre>
+                                                )
+                                            }}
+                                        >
+                                            {m.content}
+                                        </ReactMarkdown>
+                                    </div>
 
                                     {!!m.sources?.length && (
                                         <div className="rounded-xl border border-zinc-200 bg-white p-3">
