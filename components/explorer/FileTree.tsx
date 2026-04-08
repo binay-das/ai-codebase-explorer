@@ -17,14 +17,18 @@ function sortNodes(nodes: FileNodeType[]): FileNodeType[] {
 
 export const FileTree = memo(function FileTree({ nodes }: FileTreeProps) {
     if (nodes.length === 0) {
-        return <p className="px-2 py-4 text-xs text-zinc-400">No files found.</p>;
+        return (
+            <div className="py-8 text-center">
+                <p className="text-xs text-zinc-400">No files found</p>
+            </div>
+        );
     }
 
     const sorted = sortNodes(nodes);
 
     return (
         <nav aria-label="File tree">
-            <ul className="flex flex-col gap-0.5">
+            <ul className="flex flex-col">
                 {sorted.map((node) => (
                     <FileNode
                         key={node.path}
