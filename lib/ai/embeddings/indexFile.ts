@@ -1,4 +1,3 @@
-import { randomUUID } from "crypto";
 import { add } from "@/lib/ai/vectorStore";
 import { chunkFileContent } from "@/lib/ai/embeddings/chunkFile";
 import { generateEmbeddings } from "@/lib/ai/embeddings/generateEmbeddings";
@@ -15,7 +14,7 @@ export async function indexFile(filePath: string, content: string): Promise<void
     
     for (let i = 0; i < chunks.length; i++) {
         const entry = {
-            id: randomUUID(),
+            id: crypto.randomUUID(),
             vector: vectors[i],
             filePath,
             content: chunks[i],

@@ -9,6 +9,10 @@ import { repoCache } from "../cache/repoCache";
 import { chatCache } from "../cache/chatCache";
 import { fileCache } from "../cache/fileCache";
 import { syncActiveRepo } from "@/lib/ai/indexing/repoIndexState";
+import {
+    indexRepositoryFromGitHubTree,
+    indexRepositoryFromNormalizedTree,
+} from "@/lib/ai/indexing/indexRepo";
 
 export interface IngestedRepo {
     repo: RepoInfo;
@@ -33,6 +37,7 @@ export async function ingestRepo(repoUrl: string): Promise<IngestedRepo> {
         const cached = repoCache.get(owner, repo);
         if (cached) {
             store.setRepoData(cached.repo, cached.tree);
+            await indexRepositoryFromNormalizedTree(owner, repo, cached.tree);
             return cached;
         }
 
@@ -46,6 +51,7 @@ export async function ingestRepo(repoUrl: string): Promise<IngestedRepo> {
         repoCache.set(owner, repo, payload);
 
         store.setRepoData(repoInfo, normalizedTree);
+        await indexRepositoryFromGitHubTree(owner, repo, rawTree);
 
         return payload;
     } catch (error) {

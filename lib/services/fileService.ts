@@ -1,4 +1,5 @@
 import { fileCache } from "@/lib/cache/fileCache";
+import { ensureFileIndexed } from "@/lib/ai/indexing/indexRepo";
 import { isBinaryFile } from "@/lib/viewer/detectLanguage";
 import { useRepoStore } from "@/lib/store/repoStore";
 
@@ -26,6 +27,7 @@ export async function fetchFileForViewer(
 
     const [owner, repoName] = repo.full_name.split("/");
     const rawContent = await fileCache.fetchOrGet(owner, repoName, filePath);
+    void ensureFileIndexed(owner, repoName, filePath, rawContent);
 
     const byteSize = new TextEncoder().encode(rawContent).length;
     if (byteSize > MAX_SIZE_BYTES) {
