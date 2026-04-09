@@ -7,6 +7,8 @@ import { useRepoStore } from "@/lib/store/repoStore";
 import { FileNode, normalizeTree } from "./normalizeTree";
 import { repoCache } from "../cache/repoCache";
 import { chatCache } from "../cache/chatCache";
+import { fileCache } from "../cache/fileCache";
+import { syncActiveRepo } from "@/lib/ai/indexing/repoIndexState";
 
 export interface IngestedRepo {
     repo: RepoInfo;
@@ -23,6 +25,8 @@ export async function ingestRepo(repoUrl: string): Promise<IngestedRepo> {
 
         if (store.repo?.full_name !== repoKey) {
             chatCache.clear();
+            fileCache.clear();
+            syncActiveRepo(repoKey);
         }
 
         // check cache

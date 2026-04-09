@@ -2,17 +2,21 @@ import { getFileContent } from "@/lib/github/getFileContent";
 
 const cache = new Map<string, string>();
 
+function toCacheKey(owner: string, repo: string, path: string): string {
+    return `${owner}/${repo}:${path}`;
+}
+
 export const fileCache = {
-    get: (path: string): string | undefined => {
-        return cache.get(path);
+    get: (owner: string, repo: string, path: string): string | undefined => {
+        return cache.get(toCacheKey(owner, repo, path));
     },
 
-    set: (path: string, content: string): void => {
-        cache.set(path, content);
+    set: (owner: string, repo: string, path: string, content: string): void => {
+        cache.set(toCacheKey(owner, repo, path), content);
     },
 
-    has: (path: string): boolean => {
-        return cache.has(path);
+    has: (owner: string, repo: string, path: string): boolean => {
+        return cache.has(toCacheKey(owner, repo, path));
     },
 
     fetchOrGet: async (
@@ -20,13 +24,14 @@ export const fileCache = {
         repo: string,
         path: string
     ): Promise<string> => {
-        const cached = cache.get(path);
+        const cacheKey = toCacheKey(owner, repo, path);
+        const cached = cache.get(cacheKey);
         if (cached !== undefined) {
             return cached;
         }
 
         const content = await getFileContent(owner, repo, path);
-        cache.set(path, content);
+        cache.set(cacheKey, content);
         return content;
     },
 
