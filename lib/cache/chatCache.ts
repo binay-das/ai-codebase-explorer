@@ -1,11 +1,9 @@
 import type { AskRepoResult } from "@/lib/ai/repoChat";
 import { normalizeQuery } from "@/lib/ai/utils/normalizeQuery";
-import { useRepoStore } from "@/lib/store/repoStore";
 
 // normalize a question for cache lookup
 function toCacheKey(question: string): string {
-    const repoName = useRepoStore.getState().repo?.full_name ?? "no-repo";
-    return `${repoName}:${normalizeQuery(question)}`;
+    return normalizeQuery(question);
 }
 
 const cache = new Map<string, AskRepoResult>();

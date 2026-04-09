@@ -5,7 +5,8 @@ import { useExplorerStore } from "@/lib/store/explorerStore";
 import { fetchFileForViewer, MAX_LINES } from "@/lib/services/fileService";
 import { detectLanguage, isBinaryFile } from "@/lib/viewer/detectLanguage";
 import { tokenizeCode } from "@/lib/viewer/highlight";
-import { explainFile, type ExplainFileResult } from "@/lib/ai/explainFile";
+import { explainFile } from "@/lib/ai/explainFileClient";
+import type { ExplainFileResult } from "@/lib/ai/explainFile";
 import type { CSSProperties } from "react";
 import type { ThemedToken } from "shiki";
 

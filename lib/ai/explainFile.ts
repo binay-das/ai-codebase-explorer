@@ -81,7 +81,7 @@ export async function explainFile(
         );
     }
 
-    if (rawResponse.includes("mock analysis")) {
+    if (rawResponse.toLowerCase().includes("mock fallback response")) {
         usedFallback = true;
     }
 
