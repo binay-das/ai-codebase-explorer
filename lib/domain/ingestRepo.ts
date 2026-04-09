@@ -1,18 +1,6 @@
-
-import { getRepo } from "@/lib/github/getRepo";
-import { getRepoTree } from "@/lib/github/getRepoTree";
-import { parseRepoUrl } from "@/lib/github/parseRepoUrl";
 import { RepoInfo } from "@/lib/github/types";
 import { useRepoStore } from "@/lib/store/repoStore";
-import { FileNode, normalizeTree } from "./normalizeTree";
-import { repoCache } from "../cache/repoCache";
-import { chatCache } from "../cache/chatCache";
-import { fileCache } from "../cache/fileCache";
-import { syncActiveRepo } from "@/lib/ai/indexing/repoIndexState";
-import {
-    indexRepositoryFromGitHubTree,
-    indexRepositoryFromNormalizedTree,
-} from "@/lib/ai/indexing/indexRepo";
+import { FileNode } from "./normalizeTree";
 
 export interface IngestedRepo {
     repo: RepoInfo;
@@ -24,35 +12,21 @@ export async function ingestRepo(repoUrl: string): Promise<IngestedRepo> {
     store.setLoading();
 
     try {
-        const { owner, repo } = parseRepoUrl(repoUrl);
-        const repoKey = `${owner}/${repo}`;
+        const response = await fetch("/api/repo/ingest", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ repoUrl }),
+        });
 
-        if (store.repo?.full_name !== repoKey) {
-            chatCache.clear();
-            fileCache.clear();
-            syncActiveRepo(repoKey);
+        const data = (await response.json()) as IngestedRepo | { error?: string };
+        if (!response.ok) {
+            throw new Error("error" in data && data.error ? data.error : "Repository ingestion failed.");
         }
 
-        // check cache
-        const cached = repoCache.get(owner, repo);
-        if (cached) {
-            store.setRepoData(cached.repo, cached.tree);
-            await indexRepositoryFromNormalizedTree(owner, repo, cached.tree);
-            return cached;
-        }
-
-        const repoInfo = await getRepo(owner, repo);
-        const rawTree = await getRepoTree(owner, repo, repoInfo.default_branch);
-        const normalizedTree = normalizeTree(rawTree);
-
-        const payload: IngestedRepo = { repo: repoInfo, tree: normalizedTree };
-
-        // add to cache
-        repoCache.set(owner, repo, payload);
-
-        store.setRepoData(repoInfo, normalizedTree);
-        await indexRepositoryFromGitHubTree(owner, repo, rawTree);
-
+        const payload = data as IngestedRepo;
+        store.setRepoData(payload.repo, payload.tree);
         return payload;
     } catch (error) {
         let errorMessage = "An unexpected error occurred during repository ingestion.";

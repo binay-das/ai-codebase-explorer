@@ -1,9 +1,6 @@
-import { fileCache } from "@/lib/cache/fileCache";
-import { ensureFileIndexed } from "@/lib/ai/indexing/indexRepo";
 import { isBinaryFile } from "@/lib/viewer/detectLanguage";
 import { useRepoStore } from "@/lib/store/repoStore";
 
-const MAX_SIZE_BYTES = 200 * 1024; // 200 KB
 export const MAX_LINES = 500;
 
 export interface FileServiceResult {
@@ -26,28 +23,25 @@ export async function fetchFileForViewer(
     }
 
     const [owner, repoName] = repo.full_name.split("/");
-    const rawContent = await fileCache.fetchOrGet(owner, repoName, filePath);
-    void ensureFileIndexed(owner, repoName, filePath, rawContent);
+    const response = await fetch("/api/repo/file", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            owner,
+            repo: repoName,
+            filePath,
+        }),
+    });
 
-    const byteSize = new TextEncoder().encode(rawContent).length;
-    if (byteSize > MAX_SIZE_BYTES) {
-        return { content: "", truncated: false, tooLarge: true };
+    const data = (await response.json()) as FileServiceResult | { error?: string };
+    if (!response.ok) {
+        if ("error" in data && data.error) {
+            throw new Error(data.error);
+        }
+        throw new Error("Failed to load file.");
     }
 
-    const lines = rawContent.split("\n");
-    if (lines.length > MAX_LINES) {
-        return {
-            content: lines.slice(0, MAX_LINES).join("\n"),
-            truncated: true,
-            tooLarge: false,
-        };
-    }
-
-    return { 
-        content: rawContent, 
-        truncated: false, 
-        tooLarge: false 
-    };
-
-    
+    return data as FileServiceResult;
 }
