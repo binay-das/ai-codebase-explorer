@@ -6,8 +6,8 @@ import type { GitHubTreeItem } from "@/lib/github/getRepoTree";
 import { isBinaryFile } from "@/lib/viewer/detectLanguage";
 
 const MAX_INDEXABLE_FILE_SIZE_BYTES = 100 * 1024;
-const MAX_INDEXABLE_FILE_COUNT = 80;
-const INDEX_CONCURRENCY = 4;
+const MAX_INDEXABLE_FILE_COUNT = 20;
+const INDEX_CONCURRENCY = 2;
 
 type RepoFileCandidate = {
     path: string;
