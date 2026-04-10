@@ -1,6 +1,7 @@
 import { getFileContent } from "@/lib/github/getFileContent";
 
 const cache = new Map<string, string>();
+const pending = new Map<string, Promise<string>>();
 
 function toCacheKey(owner: string, repo: string, path: string): string {
     return `${owner}/${repo}:${path}`;
@@ -30,12 +31,26 @@ export const fileCache = {
             return cached;
         }
 
-        const content = await getFileContent(owner, repo, path);
-        cache.set(cacheKey, content);
-        return content;
+        const existingRequest = pending.get(cacheKey);
+        if (existingRequest) {
+            return existingRequest;
+        }
+
+        const request = getFileContent(owner, repo, path)
+            .then((content) => {
+                cache.set(cacheKey, content);
+                return content;
+            })
+            .finally(() => {
+                pending.delete(cacheKey);
+            });
+
+        pending.set(cacheKey, request);
+        return request;
     },
 
     clear: (): void => {
         cache.clear();
+        pending.clear();
     },
 };

@@ -14,6 +14,8 @@ export interface IngestedRepo {
     tree: FileNode[];
 }
 
+const pendingIngests = new Map<string, Promise<IngestedRepo>>();
+
 export async function ingestRepoServer(repoUrl: string): Promise<IngestedRepo> {
     const { owner, repo } = parseRepoUrl(repoUrl);
     const repoKey = `${owner}/${repo}`;
@@ -28,13 +30,25 @@ export async function ingestRepoServer(repoUrl: string): Promise<IngestedRepo> {
         return cached;
     }
 
-    const repoInfo = await getRepo(owner, repo);
-    const rawTree = await getRepoTree(owner, repo, repoInfo.default_branch);
-    const normalizedTree = normalizeTree(rawTree);
-    const payload: IngestedRepo = { repo: repoInfo, tree: normalizedTree };
+    const pendingIngest = pendingIngests.get(repoKey);
+    if (pendingIngest) {
+        return pendingIngest;
+    }
 
-    repoCache.set(owner, repo, payload);
-    await indexRepositoryFromGitHubTree(owner, repo, rawTree);
+    const request = (async () => {
+        const repoInfo = await getRepo(owner, repo);
+        const rawTree = await getRepoTree(owner, repo, repoInfo.default_branch);
+        const normalizedTree = normalizeTree(rawTree);
+        const payload: IngestedRepo = { repo: repoInfo, tree: normalizedTree };
 
-    return payload;
+        repoCache.set(owner, repo, payload);
+        await indexRepositoryFromGitHubTree(owner, repo, rawTree);
+
+        return payload;
+    })().finally(() => {
+        pendingIngests.delete(repoKey);
+    });
+
+    pendingIngests.set(repoKey, request);
+    return request;
 }

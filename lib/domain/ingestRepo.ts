@@ -7,17 +7,30 @@ export interface IngestedRepo {
     tree: FileNode[];
 }
 
+let pendingIngest:
+    | {
+        repoUrl: string;
+        request: Promise<IngestedRepo>;
+    }
+    | null = null;
+
 export async function ingestRepo(repoUrl: string): Promise<IngestedRepo> {
+    const normalizedRepoUrl = repoUrl.trim();
     const store = useRepoStore.getState();
+
+    if (pendingIngest?.repoUrl === normalizedRepoUrl) {
+        return pendingIngest.request;
+    }
+
     store.setLoading();
 
-    try {
+    const request = (async () => {
         const response = await fetch("/api/repo/ingest", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ repoUrl }),
+            body: JSON.stringify({ repoUrl: normalizedRepoUrl }),
         });
 
         const data = (await response.json()) as IngestedRepo | { error?: string };
@@ -28,6 +41,19 @@ export async function ingestRepo(repoUrl: string): Promise<IngestedRepo> {
         const payload = data as IngestedRepo;
         store.setRepoData(payload.repo, payload.tree);
         return payload;
+    })();
+
+    pendingIngest = {
+        repoUrl: normalizedRepoUrl,
+        request: request.finally(() => {
+            if (pendingIngest?.repoUrl === normalizedRepoUrl) {
+                pendingIngest = null;
+            }
+        }),
+    };
+
+    try {
+        return await pendingIngest.request;
     } catch (error) {
         let errorMessage = "An unexpected error occurred during repository ingestion.";
 
