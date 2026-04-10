@@ -1,3 +1,5 @@
+import { ThemeToggle } from "@/components/theme-toggle";
+
 type HeaderProps = {
   title: string;
 };
@@ -35,15 +37,16 @@ function GithubIcon({ className }: { className?: string }) {
 
 export function Header({ title }: HeaderProps) {
   return (
-    <header className="border-b border-zinc-200/60 bg-white/80 px-6 py-3 backdrop-blur-sm">
+    <header className="border-b border-zinc-200/60 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-950/80 px-6 py-3 backdrop-blur-sm">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h2 className="text-base font-semibold text-zinc-900 tracking-tight">
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
             {title}
           </h2>
         </div>
 
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           <button
             type="button"
             className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"

@@ -76,17 +76,17 @@ export function Sidebar({
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen w-60 shrink-0 flex-col bg-white border-r border-zinc-200/60">
+    <aside className="flex h-screen w-60 shrink-0 flex-col bg-white dark:bg-zinc-950 border-r border-zinc-200/60 dark:border-zinc-800/80">
       <div className="px-5 py-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-900">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-900 dark:bg-zinc-800">
             <CodeIcon className="h-5 w-5 text-white" />
           </div>
           <div>
             <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400">
               Powered by AI
             </p>
-            <h1 className="text-sm font-semibold text-zinc-900 tracking-tight">
+            <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
               {appName}
             </h1>
           </div>
@@ -111,14 +111,14 @@ export function Sidebar({
                   className={[
                     "group flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
                     isActive
-                      ? "bg-zinc-900 text-white shadow-sm"
-                      : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900",
+                      ? "bg-zinc-900 text-white shadow-sm dark:bg-zinc-800"
+                      : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/50 dark:hover:text-zinc-100",
                   ].join(" ")}
                 >
                   <Icon
                     className={[
                       "h-4 w-4 shrink-0 transition-colors",
-                      isActive ? "text-white/80" : "text-zinc-400 group-hover:text-zinc-600",
+                      isActive ? "text-white/80" : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300",
                     ].join(" ")}
                   />
                   {item.label}
@@ -129,7 +129,7 @@ export function Sidebar({
         </ul>
       </nav>
 
-      <div className="border-t border-zinc-100 px-5 py-4">
+      <div className="border-t border-zinc-100 dark:border-zinc-800/80 px-5 py-4">
         <p className="text-[10px] text-zinc-400">
           Built with Next.js & AI
         </p>
