@@ -8,6 +8,7 @@ import { isBinaryFile } from "@/lib/viewer/detectLanguage";
 const MAX_INDEXABLE_FILE_SIZE_BYTES = 100 * 1024;
 const MAX_INDEXABLE_FILE_COUNT = 20;
 const INDEX_CONCURRENCY = 2;
+const pendingRepositoryIndexes = new Map<string, Promise<void>>();
 
 type RepoFileCandidate = {
     path: string;
@@ -115,6 +116,20 @@ async function runWorkers(
     );
 }
 
+function runRepositoryIndexOnce(repoKey: string, task: () => Promise<void>): Promise<void> {
+    const existing = pendingRepositoryIndexes.get(repoKey);
+    if (existing) {
+        return existing;
+    }
+
+    const request = task().finally(() => {
+        pendingRepositoryIndexes.delete(repoKey);
+    });
+
+    pendingRepositoryIndexes.set(repoKey, request);
+    return request;
+}
+
 export async function indexRepositoryFromGitHubTree(
     owner: string,
     repo: string,
@@ -125,6 +140,21 @@ export async function indexRepositoryFromGitHubTree(
     await runWorkers(owner, repo, repoKey, selectIndexableFiles(toCandidatesFromGitHubTree(tree)));
 }
 
+export function scheduleRepositoryIndexFromGitHubTree(
+    owner: string,
+    repo: string,
+    tree: GitHubTreeItem[]
+): void {
+    const repoKey = getRepoKey(owner, repo);
+
+    void runRepositoryIndexOnce(repoKey, async () => {
+        syncActiveRepo(repoKey);
+        await runWorkers(owner, repo, repoKey, selectIndexableFiles(toCandidatesFromGitHubTree(tree)));
+    }).catch((error) => {
+        console.warn(`Repository indexing failed for ${repoKey}:`, error);
+    });
+}
+
 export async function indexRepositoryFromNormalizedTree(
     owner: string,
     repo: string,
@@ -133,6 +163,21 @@ export async function indexRepositoryFromNormalizedTree(
     const repoKey = getRepoKey(owner, repo);
     syncActiveRepo(repoKey);
     await runWorkers(owner, repo, repoKey, selectIndexableFiles(toCandidatesFromNormalizedTree(tree)));
+}
+
+export function scheduleRepositoryIndexFromNormalizedTree(
+    owner: string,
+    repo: string,
+    tree: FileNode[]
+): void {
+    const repoKey = getRepoKey(owner, repo);
+
+    void runRepositoryIndexOnce(repoKey, async () => {
+        syncActiveRepo(repoKey);
+        await runWorkers(owner, repo, repoKey, selectIndexableFiles(toCandidatesFromNormalizedTree(tree)));
+    }).catch((error) => {
+        console.warn(`Repository indexing failed for ${repoKey}:`, error);
+    });
 }
 
 export async function ensureFileIndexed(

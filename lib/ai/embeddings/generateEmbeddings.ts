@@ -1,6 +1,6 @@
 import { generateEmbedding } from "@/lib/ai/aiService";
 
-const EMBEDDING_BATCH_SIZE = 4;
+const EMBEDDING_BATCH_SIZE = 1;
 
 function toBatches<T>(items: T[], batchSize: number): T[][] {
     const batches: T[][] = [];

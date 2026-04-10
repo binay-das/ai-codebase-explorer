@@ -1,8 +1,8 @@
 import type { AIProvider, GenerateEmbeddingInput, GenerateTextInput } from "@/lib/ai/types";
 
 const OLLAMA_BASE_URL = "http://localhost:11434";
-const CHAT_MODEL = "llama3.2";
-const EMBEDDING_MODEL = "nomic-embed-text";
+const CHAT_MODEL = "llama3.1:8b";
+const EMBEDDING_MODEL = "nomic-embed-text:v1.5";
 const REQUEST_TIMEOUT_MS = 15_000;
 
 interface OllamaGenerateResponse {

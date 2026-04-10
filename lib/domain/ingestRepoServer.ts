@@ -1,4 +1,4 @@
-import { indexRepositoryFromGitHubTree, indexRepositoryFromNormalizedTree } from "@/lib/ai/indexing/indexRepo";
+import { scheduleRepositoryIndexFromGitHubTree, scheduleRepositoryIndexFromNormalizedTree } from "@/lib/ai/indexing/indexRepo";
 import { syncActiveRepo } from "@/lib/ai/indexing/repoIndexState";
 import { chatCache } from "@/lib/cache/chatCache";
 import { fileCache } from "@/lib/cache/fileCache";
@@ -26,7 +26,7 @@ export async function ingestRepoServer(repoUrl: string): Promise<IngestedRepo> {
 
     const cached = repoCache.get(owner, repo);
     if (cached) {
-        await indexRepositoryFromNormalizedTree(owner, repo, cached.tree);
+        scheduleRepositoryIndexFromNormalizedTree(owner, repo, cached.tree);
         return cached;
     }
 
@@ -42,7 +42,7 @@ export async function ingestRepoServer(repoUrl: string): Promise<IngestedRepo> {
         const payload: IngestedRepo = { repo: repoInfo, tree: normalizedTree };
 
         repoCache.set(owner, repo, payload);
-        await indexRepositoryFromGitHubTree(owner, repo, rawTree);
+        scheduleRepositoryIndexFromGitHubTree(owner, repo, rawTree);
 
         return payload;
     })().finally(() => {

@@ -40,6 +40,16 @@ function delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function shouldRetry(error: unknown): boolean {
+    if (!(error instanceof Error)) {
+        return true;
+    }
+
+    const message = error.message.toLowerCase();
+    return !(
+        message.includes("context") && message.includes("limit")
+    );
+}
 
 async function withRetry<T>(
     fn: () => Promise<T>,
@@ -75,9 +85,12 @@ async function withRetry<T>(
             });
 
             const isLastAttempt = attempt === MAX_RETRIES;
-            if (!isLastAttempt) {
+            if (!isLastAttempt && shouldRetry(error)) {
                 await delay(RETRY_BASE_DELAY_MS * attempt);
+                continue;
             }
+
+            break;
         }
     }
 

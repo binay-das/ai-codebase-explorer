@@ -77,7 +77,7 @@ export async function runRepoRagPipeline(question: string): Promise<RagAnswer> {
     }
 
     const prompt = buildRagPrompt(question, context);
-    const answer = await generateText(prompt, context);
+    const answer = await generateText(prompt);
     const sources = retrieval.results.slice(0, MAX_SOURCE_COUNT).map((chunk) => ({
         filePath: chunk.filePath,
         snippet: toSnippet(chunk.content),
