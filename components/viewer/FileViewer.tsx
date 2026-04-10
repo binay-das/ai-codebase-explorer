@@ -155,14 +155,14 @@ function SpinnerIcon({ className }: { className?: string }) {
 
 function EmptyState() {
     return (
-        <div className="flex h-full items-center justify-center">
+        <div className="flex h-full items-center justify-center bg-white">
             <div className="text-center">
-                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-100">
-                    <CodeIcon className="h-6 w-6 text-zinc-400" />
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-zinc-100">
+                    <CodeIcon className="h-5 w-5 text-zinc-400" />
                 </div>
                 <p className="text-sm font-medium text-zinc-500">No file selected</p>
                 <p className="mt-1 text-xs text-zinc-400">
-                    Select a file from the explorer to view its contents
+                    Select a file from the explorer
                 </p>
             </div>
         </div>
@@ -171,16 +171,17 @@ function EmptyState() {
 
 function LoadingSkeleton() {
     return (
-        <div className="space-y-3 p-5" aria-label="Loading file content">
-            {Array.from({ length: 14 }).map((_, i) => (
+        <div className="bg-white p-4" aria-label="Loading file content">
+            {Array.from({ length: 12 }).map((_, i) => (
                 <div
                     key={i}
-                    className="flex items-center gap-3"
+                    className="flex items-center"
+                    style={{ lineHeight: "20px", marginBottom: i < 11 ? "0" : "0" }}
                 >
-                    <div className="h-3 w-8 animate-pulse rounded bg-zinc-200" />
+                    <div className="h-3 w-10 animate-pulse rounded bg-zinc-200 shrink-0 mr-4" />
                     <div
-                        className="h-3 animate-pulse rounded bg-zinc-200"
-                        style={{ width: `${45 + ((i * 23) % 45)}%` }}
+                        className="h-3 animate-pulse rounded bg-zinc-100"
+                        style={{ width: `${40 + ((i * 23) % 45)}%` }}
                     />
                 </div>
             ))}
@@ -190,16 +191,16 @@ function LoadingSkeleton() {
 
 function AILoadingSkeleton() {
     return (
-        <div className="space-y-3 p-4" aria-label="Generating explanation">
-            <div className="flex items-center gap-2">
-                <div className="h-4 w-4 animate-pulse rounded bg-zinc-200" />
-                <div className="h-3 w-20 animate-pulse rounded bg-zinc-200" />
+        <div className="p-4" aria-label="Generating explanation">
+            <div className="flex items-center gap-2 mb-3">
+                <div className="h-3 w-3 animate-pulse rounded bg-zinc-200" />
+                <div className="h-3 w-16 animate-pulse rounded bg-zinc-200" />
             </div>
-            {Array.from({ length: 4 }).map((_, i) => (
+            {Array.from({ length: 3 }).map((_, i) => (
                 <div
                     key={i}
-                    className="h-3 animate-pulse rounded bg-zinc-100"
-                    style={{ width: `${60 + ((i * 17) % 35)}%` }}
+                    className="h-2.5 animate-pulse rounded bg-zinc-100 mb-2"
+                    style={{ width: `${50 + ((i * 17) % 40)}%` }}
                 />
             ))}
         </div>
@@ -235,8 +236,8 @@ function ExplanationPanel({ aiState, onRequestExplain, canExplain }: Explanation
     const isLoading = aiState.status === "loading";
 
     return (
-        <div className="border-t border-zinc-100 bg-white">
-            <div className="flex items-center justify-between px-4 py-3">
+        <div className="border-t border-zinc-200 bg-white">
+            <div className="flex items-center justify-between px-4 py-2">
                 <div className="flex items-center gap-2">
                     <SparklesIcon className="h-4 w-4 text-zinc-500" />
                     <p className="text-sm font-medium text-zinc-700">AI Explanation</p>
@@ -280,7 +281,7 @@ function ExplanationPanel({ aiState, onRequestExplain, canExplain }: Explanation
             {aiState.status === "loading" && <AILoadingSkeleton />}
 
             {aiState.status === "error" && (
-                <div className="px-4 pb-4">
+                <div className="px-4 pb-3">
                     <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
                         {aiState.error}
                     </p>
@@ -288,7 +289,7 @@ function ExplanationPanel({ aiState, onRequestExplain, canExplain }: Explanation
             )}
 
             {aiState.status === "done" && aiState.result && (
-                <div className="flex max-h-[320px] flex-col gap-3 overflow-y-auto px-4 pb-4">
+                <div className="flex max-h-[280px] flex-col gap-3 overflow-y-auto px-4 pb-3">
                     <SectionCard title="Purpose" content={aiState.result.sections.purpose} />
                     <SectionCard
                         title="Key Functions"
@@ -405,11 +406,11 @@ export const FileViewer = memo(function FileViewer() {
     return (
         <div className="flex h-full flex-col overflow-hidden">
             {selectedFilePath && (
-                <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50/80 px-4 py-2.5 backdrop-blur-sm">
+                <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50 px-4 py-2">
                     <div className="flex items-center gap-3 min-w-0">
-                        <CodeIcon className="h-4 w-4 shrink-0 text-zinc-400" />
+                        <CodeIcon className="h-4 w-4 shrink-0 text-zinc-500" />
                         <div className="min-w-0">
-                            <p className="truncate text-sm font-medium text-zinc-800 font-mono">
+                            <p className="truncate text-sm font-medium text-zinc-900 font-mono">
                                 {fileName}
                             </p>
                             <p className="truncate text-[11px] text-zinc-400">
@@ -418,7 +419,7 @@ export const FileViewer = memo(function FileViewer() {
                         </div>
                     </div>
                     {state.status === "ready" && (
-                        <span className="shrink-0 rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-500">
+                        <span className="shrink-0 text-[11px] text-zinc-400">
                             {state.lineCount} lines
                         </span>
                     )}
@@ -470,13 +471,13 @@ export const FileViewer = memo(function FileViewer() {
                 {state.status === "ready" && (
                     <div className="h-full">
                         {state.truncated && (
-                            <div className="border-b border-amber-200 bg-amber-50/80 px-4 py-2 text-xs text-amber-700 backdrop-blur-sm">
+                            <div className="border-b border-amber-200 bg-amber-50/80 px-4 py-1.5 text-xs text-amber-700">
                                 Showing first {MAX_LINES} lines — file truncated for performance
                             </div>
                         )}
                         <div
                             ref={viewerRef}
-                            className="h-full overflow-auto bg-white px-4 py-4 font-mono text-[12px] leading-6"
+                            className="h-full overflow-auto bg-white font-mono text-[13px]"
                         >
                             <pre className="min-h-full">
                                 {state.tokens.map((lineTokens, index) => {
@@ -491,16 +492,22 @@ export const FileViewer = memo(function FileViewer() {
                                             key={lineNumber}
                                             data-line-number={lineNumber}
                                             className={[
-                                                "group grid grid-cols-[3.5rem,minmax(0,1fr)] rounded transition-colors",
+                                                "group flex transition-colors",
                                                 isHighlighted 
-                                                    ? "bg-amber-50/80 ring-1 ring-amber-200" 
-                                                    : "hover:bg-zinc-50/50",
+                                                    ? "bg-amber-50/80" 
+                                                    : "hover:bg-zinc-100/50",
                                             ].join(" ")}
                                         >
-                                            <span className="select-none pr-4 text-right text-zinc-400/60 group-hover:text-zinc-400 transition-colors">
+                                            <span 
+                                                className="select-none shrink-0 w-14 pl-4 pr-3 text-right text-zinc-400/50 text-[12px] group-hover:text-zinc-400 transition-colors border-r border-zinc-100/80 bg-zinc-50/30"
+                                                style={{ lineHeight: "20px" }}
+                                            >
                                                 {lineNumber}
                                             </span>
-                                            <span className="whitespace-pre-wrap break-words text-zinc-800">
+                                            <span 
+                                                className="whitespace-pre-wrap break-words text-zinc-800 pl-4"
+                                                style={{ lineHeight: "20px" }}
+                                            >
                                                 {lineTokens.length === 0 ? " " : lineTokens.map((token, tokenIndex) => (
                                                     <span key={`${lineNumber}-${tokenIndex}`} style={getTokenStyle(token)}>
                                                         {token.content}
