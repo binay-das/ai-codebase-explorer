@@ -505,7 +505,7 @@ export const FileViewer = memo(function FileViewer() {
                                                 {lineNumber}
                                             </span>
                                             <span 
-                                                className="whitespace-pre-wrap break-words text-zinc-800 pl-4"
+                                                className="whitespace-pre-wrap wrap-break-word text-zinc-800 pl-4"
                                                 style={{ lineHeight: "20px" }}
                                             >
                                                 {lineTokens.length === 0 ? " " : lineTokens.map((token, tokenIndex) => (
