@@ -1,23 +1,60 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../lib/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-model User { 
-  id    Int     @id @default(autoincrement()) 
-  email String  @unique
-  name  String?
-  posts Post[]
-} 
-model Post { 
-  id        Int     @id @default(autoincrement()) 
-  title     String
-  content   String?
-  published Boolean @default(false) 
-  authorId  Int
-  author    User    @relation(fields: [authorId], references: [id]) 
-} 
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  
+  repositories Repository[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Repository {
+  id               String   @id @default(uuid())
+  owner            String
+  name             String
+  fullName         String   @unique
+  description      String?
+  stargazersCount  Int      @default(0)
+  forksCount       Int      @default(0)
+  language         String?
+  defaultBranch    String
+
+  files            RepositoryFile[]
+  users            User[]
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([owner, name])
+}
+
+model RepositoryFile {
+  id             String     @id @default(uuid())
+  repositoryId   String
+  repository     Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  
+  path           String
+  name           String
+  type           RepositoryFileType
+  content        String?
+  
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@unique([repositoryId, path])
+}
+
+enum RepositoryFileType {
+  FILE
+  DIR
+}
