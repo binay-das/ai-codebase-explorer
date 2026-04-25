@@ -42,12 +42,14 @@ model RepositoryFile {
   id             String     @id @default(uuid())
   repositoryId   String
   repository     Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
-  
+
   path           String
   name           String
   type           RepositoryFileType
-  content        String?
-  
+  sha            String?    // git blob SHA — can be used for cache invalidation
+  size           Int?       
+  storageKey     String?    // object key — null until file content is hydrated
+
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 

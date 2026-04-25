@@ -1,0 +1,5 @@
+ALTER TABLE "RepositoryFile"
+  DROP COLUMN IF EXISTS content,
+  ADD COLUMN IF NOT EXISTS sha          TEXT,
+  ADD COLUMN IF NOT EXISTS size         INTEGER,
+  ADD COLUMN IF NOT EXISTS "storageKey" TEXT;
