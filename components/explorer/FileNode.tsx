@@ -3,8 +3,6 @@
 import { memo, useState } from "react";
 import { FileNode as FileNodeType } from "@/lib/domain/normalizeTree";
 import { useExplorerStore } from "@/lib/store/explorerStore";
-import { useRepoStore } from "@/lib/store/repoStore";
-import { fileCache } from "@/lib/cache/fileCache";
 
 interface FileNodeProps {
     node: FileNodeType;
@@ -129,7 +127,6 @@ export const FileNode = memo(function FileNode({
 }: FileNodeProps) {
     const [isOpen, setIsOpen] = useState(false);
     const { selectedFilePath, setSelectedFile } = useExplorerStore();
-    const { repo } = useRepoStore();
 
     const isSelected = selectedFilePath === node.path;
     const isDir = node.type === "dir";
@@ -142,10 +139,6 @@ export const FileNode = memo(function FileNode({
             return;
         }
         setSelectedFile(node.path);
-        if (repo) {
-            const [owner, repoName] = repo.full_name.split("/");
-            await fileCache.fetchOrGet(owner, repoName, node.path);
-        }
     };
 
     const handleKeyDown = async (e: React.KeyboardEvent<HTMLButtonElement>) => {

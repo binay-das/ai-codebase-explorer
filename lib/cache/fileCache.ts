@@ -1,4 +1,10 @@
+import "server-only";
+
 import { getFileContent } from "@/lib/github/getFileContent";
+import {
+    getFileFromStorage,
+    storeFileToStorage,
+} from "@/lib/storage/fileStorage";
 
 const cache = new Map<string, string>();
 const pending = new Map<string, Promise<string>>();
@@ -20,12 +26,14 @@ export const fileCache = {
         return cache.has(toCacheKey(owner, repo, path));
     },
 
+
     fetchOrGet: async (
         owner: string,
         repo: string,
         path: string
     ): Promise<string> => {
         const cacheKey = toCacheKey(owner, repo, path);
+
         const cached = cache.get(cacheKey);
         if (cached !== undefined) {
             return cached;
@@ -36,7 +44,16 @@ export const fileCache = {
             return existingRequest;
         }
 
-        const request = getFileContent(owner, repo, path)
+        const request = getFileFromStorage(owner, repo, path)
+            .then(async (storedContent) => {
+                if (storedContent !== null) {
+                    return storedContent;
+                }
+
+                const content = await getFileContent(owner, repo, path);
+                await storeFileToStorage(owner, repo, path, content);
+                return content;
+            })
             .then((content) => {
                 cache.set(cacheKey, content);
                 return content;
