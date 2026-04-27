@@ -1,5 +1,6 @@
-import { ensureFileIndexed } from "@/lib/ai/indexing/indexRepo";
-import { fileCache } from "@/lib/cache/fileCache";
+// import { ensureFileIndexed } from "@/lib/ai/indexing/indexRepo";
+// import { fileCache } from "@/lib/cache/fileCache";
+import { getFileFromStorage } from "@/lib/storage/fileStorage";
 import { isBinaryFile } from "@/lib/viewer/detectLanguage";
 import { NextResponse } from "next/server";
 
@@ -26,8 +27,16 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "BINARY" }, { status: 415 });
         }
 
-        const rawContent = await fileCache.fetchOrGet(owner, repo, filePath);
-        await ensureFileIndexed(owner, repo, filePath, rawContent);
+        
+        // const rawContent = await fileCache.fetchOrGet(owner, repo, filePath);
+        const rawContent = await getFileFromStorage(owner, repo, filePath);
+
+        if (rawContent === null) {
+            return NextResponse.json(
+                { error: `File not found in storage: ${owner}/${repo}/${filePath}` },
+                { status: 404 }
+            );
+        }
 
         const byteSize = new TextEncoder().encode(rawContent).length;
         if (byteSize > MAX_SIZE_BYTES) {

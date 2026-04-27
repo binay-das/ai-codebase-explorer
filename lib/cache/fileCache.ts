@@ -1,9 +1,9 @@
 import "server-only";
 
-import { getFileContent } from "@/lib/github/getFileContent";
+// import { getFileContent } from "@/lib/github/getFileContent";
 import {
     getFileFromStorage,
-    storeFileToStorage,
+    // storeFileToStorage,
 } from "@/lib/storage/fileStorage";
 
 const cache = new Map<string, string>();
@@ -50,9 +50,10 @@ export const fileCache = {
                     return storedContent;
                 }
 
-                const content = await getFileContent(owner, repo, path);
-                await storeFileToStorage(owner, repo, path, content);
-                return content;
+                // const content = await getFileContent(owner, repo, path);
+                // await storeFileToStorage(owner, repo, path, content);
+                // return content;
+                throw new Error(`File not found in storage: ${owner}/${repo}/${path}`);
             })
             .then((content) => {
                 cache.set(cacheKey, content);
