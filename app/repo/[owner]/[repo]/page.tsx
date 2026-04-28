@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+
+import { Sidebar } from "@/components/layout/Sidebar";
 import { useRepoStore } from "@/lib/store/repoStore";
+import { useStoredRepositories } from "@/lib/hooks/useStoredRepositories";
 import { FileTree } from "@/components/explorer/FileTree";
 import { FileViewer } from "@/components/viewer/FileViewer";
 import ChatPanel from "@/components/chat/ChatPanel";
@@ -101,11 +104,17 @@ function SpinnerIcon({ className }: { className?: string }) {
 export default function RepoPage() {
   const params = useParams();
   const router = useRouter();
-  const { repo, tree, status, error, setLoading, setRepoData, setError, reset } = useRepoStore();
+  const { repo, tree, error, setLoading, setRepoData, setError, reset } = useRepoStore();
   const [isLoading, setIsLoading] = useState(true);
+  const { repositories } = useStoredRepositories();
 
   const owner = params.owner as string;
   const repoName = params.repo as string;
+  const repositoryItems = repositories.map((repository) => ({
+    label: repository.fullName,
+    href: `/repo/${repository.owner}/${repository.name}`,
+    meta: repository.language ?? `${repository.hydratedFileCount} files`,
+  }));
 
   useEffect(() => {
     async function loadRepo() {
@@ -145,16 +154,27 @@ export default function RepoPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-zinc-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white border border-zinc-200 shadow-sm mb-4">
-            <GithubIcon className="w-8 h-8 text-zinc-600" />
+      <div className="dark h-screen">
+        <div className="flex h-screen bg-zinc-950">
+          <Sidebar
+            appName="Codebase Explorer"
+            navigationItems={[{ label: "Home", href: "/" }]}
+            repositoryItems={repositoryItems}
+          />
+          <div className="flex min-w-0 flex-1 items-center justify-center">
+            <div className="text-center">
+              <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm">
+                <GithubIcon className="h-8 w-8 text-zinc-300" />
+              </div>
+              <div className="flex items-center justify-center gap-3 text-zinc-400">
+                <SpinnerIcon className="h-5 w-5 animate-spin" />
+                <span>Loading repository...</span>
+              </div>
+              <p className="mt-2 text-sm text-zinc-500">
+                {owner}/{repoName}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center justify-center gap-3 text-zinc-500">
-            <SpinnerIcon className="w-5 h-5 animate-spin" />
-            <span>Loading repository...</span>
-          </div>
-          <p className="text-sm text-zinc-400 mt-2">{owner}/{repoName}</p>
         </div>
       </div>
     );
@@ -162,98 +182,132 @@ export default function RepoPage() {
 
   if (error || !repo) {
     return (
-      <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-red-50 border border-red-100 mb-6">
-            <GithubIcon className="w-8 h-8 text-red-500" />
+      <div className="dark h-screen">
+        <div className="flex h-screen bg-zinc-950">
+          <Sidebar
+            appName="Codebase Explorer"
+            navigationItems={[{ label: "Home", href: "/" }]}
+            repositoryItems={repositoryItems}
+          />
+          <div className="flex min-w-0 flex-1 items-center justify-center p-4">
+            <div className="max-w-md text-center">
+              <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl border border-red-950 bg-red-950/40">
+                <GithubIcon className="h-8 w-8 text-red-400" />
+              </div>
+              <h1 className="mb-2 text-2xl font-bold text-white">
+                Repository Not Found
+              </h1>
+              <p className="mb-6 text-zinc-400">
+                {error || "Unable to load repository"}
+              </p>
+              <button
+                onClick={handleBack}
+                className="inline-flex items-center gap-2 rounded-xl bg-zinc-100 px-5 py-2.5 font-medium text-zinc-900 transition-all shadow-sm hover:bg-zinc-200"
+              >
+                <HomeIcon className="h-4 w-4" />
+                Go Back
+              </button>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-zinc-900 mb-2">Repository Not Found</h1>
-          <p className="text-zinc-500 mb-6">{error || "Unable to load repository"}</p>
-          <button
-            onClick={handleBack}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-medium transition-all shadow-sm"
-          >
-            <HomeIcon className="w-4 h-4" />
-            Go Back
-          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50">
-      <header className="sticky top-0 z-50 bg-white border-b border-zinc-200 shadow-sm">
-        <div className="px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={handleBack}
-              className="p-2 rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-all"
-            >
-              <HomeIcon className="w-5 h-5" />
-            </button>
+    <div className="dark h-screen">
+      <div className="flex h-screen bg-zinc-950">
+        <Sidebar
+          appName="Codebase Explorer"
+          navigationItems={[{ label: "Home", href: "/" }]}
+          repositoryItems={repositoryItems}
+        />
+
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          <header className="sticky top-0 z-50 border-b border-zinc-800 bg-zinc-900 shadow-sm">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleBack}
+                className="rounded-lg p-2 text-zinc-400 transition-all hover:bg-zinc-800 hover:text-white"
+              >
+                <HomeIcon className="h-5 w-5" />
+              </button>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800">
+                  <GithubIcon className="h-5 w-5 text-zinc-200" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-semibold tracking-tight text-white">
+                    {repo.name}
+                  </h1>
+                  <p className="text-xs text-zinc-400">{repo.full_name}</p>
+                </div>
+              </div>
+            </div>
+
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-zinc-100 to-zinc-200 border border-zinc-200/50">
-                <GithubIcon className="h-5 w-5 text-zinc-700" />
+              <div className="flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900 px-3.5 py-1.5 shadow-sm">
+                <StarIcon className="h-4 w-4 text-amber-500" />
+                <span className="text-sm font-medium text-zinc-200">
+                  {repo.stargazers_count.toLocaleString()}
+                </span>
               </div>
-              <div>
-                <h1 className="text-lg font-semibold text-zinc-900 tracking-tight">
-                  {repo.name}
-                </h1>
-                <p className="text-xs text-zinc-500">{repo.full_name}</p>
+              <div className="flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900 px-3.5 py-1.5 shadow-sm">
+                <ForkIcon className="h-4 w-4 text-zinc-500" />
+                <span className="text-sm font-medium text-zinc-200">
+                  {repo.forks_count.toLocaleString()}
+                </span>
               </div>
+              {repo.language ? (
+                <div className="rounded-full bg-zinc-100 px-3.5 py-1.5 shadow-sm">
+                  <span className="text-sm font-medium text-zinc-900">
+                    {repo.language}
+                  </span>
+                </div>
+              ) : null}
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 rounded-full bg-white border border-zinc-200 px-3.5 py-1.5 shadow-sm">
-              <StarIcon className="h-4 w-4 text-amber-500" />
-              <span className="text-sm font-medium text-zinc-700">
-                {repo.stargazers_count.toLocaleString()}
-              </span>
+          {repo.description ? (
+            <div className="px-4 pb-3">
+              <p className="max-w-2xl text-sm text-zinc-400">
+                {repo.description}
+              </p>
             </div>
-            <div className="flex items-center gap-2 rounded-full bg-white border border-zinc-200 px-3.5 py-1.5 shadow-sm">
-              <ForkIcon className="h-4 w-4 text-zinc-500" />
-              <span className="text-sm font-medium text-zinc-700">
-                {repo.forks_count.toLocaleString()}
-              </span>
-            </div>
-            {repo.language && (
-              <div className="rounded-full bg-zinc-900 px-3.5 py-1.5 shadow-sm">
-                <span className="text-sm font-medium text-white">{repo.language}</span>
+          ) : null}
+          </header>
+
+          <main className="min-h-0 flex-1">
+            <div className="grid h-full grid-cols-[280px_1fr_380px] gap-0">
+              <div className="flex flex-col border-r border-zinc-800 bg-zinc-900">
+                <div className="border-b border-zinc-800 px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-sm font-semibold text-white">Files</h2>
+                    <p className="mt-0.5 text-xs text-zinc-500">Stored repository tree</p>
+                  </div>
+                  <span className="text-xs text-zinc-500">
+                    {tree?.length ?? 0} items
+                  </span>
+                </div>
               </div>
-            )}
+              <div className="flex-1 overflow-y-auto p-3">
+                {tree ? <FileTree nodes={tree} /> : null}
+              </div>
+            </div>
+
+            <div className="flex flex-col overflow-hidden bg-zinc-950">
+              <FileViewer />
+            </div>
+
+            <div className="flex flex-col overflow-hidden border-l border-zinc-800 bg-zinc-900">
+              <ChatPanel />
+            </div>
           </div>
+          </main>
         </div>
-
-        {repo.description && (
-          <div className="px-4 pb-3">
-            <p className="text-sm text-zinc-500 max-w-2xl">{repo.description}</p>
-          </div>
-        )}
-      </header>
-
-      <main className="h-[calc(100vh-120px)]">
-        <div className="h-full grid grid-cols-[280px_1fr_380px] gap-0">
-          <div className="bg-white border-r border-zinc-200 flex flex-col">
-            <div className="px-4 py-3 border-b border-zinc-100 bg-zinc-50/50 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-zinc-900">Files</h2>
-              <span className="text-xs text-zinc-400">{tree?.length ?? 0} items</span>
-            </div>
-            <div className="flex-1 overflow-y-auto p-3">
-              {tree && <FileTree nodes={tree} />}
-            </div>
-          </div>
-
-          <div className="bg-zinc-50 flex flex-col overflow-hidden">
-            <FileViewer />
-          </div>
-
-          <div className="bg-white border-l border-zinc-200 flex flex-col overflow-hidden">
-            <ChatPanel />
-          </div>
-        </div>
-      </main>
+      </div>
     </div>
   );
 }
