@@ -28,7 +28,7 @@ export const FileTree = memo(function FileTree({ nodes }: FileTreeProps) {
 
     return (
         <nav aria-label="File tree">
-            <ul className="flex flex-col">
+            <ul className="flex flex-col gap-0.5">
                 {sorted.map((node) => (
                     <FileNode
                         key={node.path}

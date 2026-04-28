@@ -27,28 +27,29 @@ function FileIcon({ extension, className }: { extension: string; className?: str
     const ext = extension;
     
     const colors: Record<string, string> = {
-        ts: "text-blue-400",
-        tsx: "text-blue-400",
-        js: "text-amber-400",
-        jsx: "text-amber-400",
-        py: "text-green-400",
-        rb: "text-red-400",
-        go: "text-cyan-400",
-        rs: "text-orange-400",
-        java: "text-red-500",
-        md: "text-zinc-500",
-        json: "text-amber-500",
-        css: "text-pink-400",
-        scss: "text-pink-400",
-        html: "text-orange-400",
-        svg: "text-amber-400",
-        png: "text-purple-400",
-        jpg: "text-purple-400",
-        gitignore: "text-zinc-400",
-        env: "text-emerald-400",
-        toml: "text-zinc-400",
-        yaml: "text-pink-400",
-        yml: "text-pink-400",
+        ts: "text-sky-500 dark:text-sky-400",
+        tsx: "text-sky-500 dark:text-sky-400",
+        js: "text-amber-500 dark:text-amber-400",
+        jsx: "text-amber-500 dark:text-amber-400",
+        py: "text-emerald-500 dark:text-emerald-400",
+        rb: "text-rose-500 dark:text-rose-400",
+        go: "text-cyan-500 dark:text-cyan-400",
+        rs: "text-orange-500 dark:text-orange-400",
+        java: "text-red-500 dark:text-red-400",
+        md: "text-zinc-400 dark:text-zinc-500",
+        json: "text-yellow-600 dark:text-yellow-400",
+        css: "text-pink-500 dark:text-pink-400",
+        scss: "text-pink-500 dark:text-pink-400",
+        html: "text-orange-500 dark:text-orange-400",
+        svg: "text-fuchsia-500 dark:text-fuchsia-400",
+        png: "text-violet-500 dark:text-violet-400",
+        jpg: "text-violet-500 dark:text-violet-400",
+        jpeg: "text-violet-500 dark:text-violet-400",
+        gitignore: "text-zinc-400 dark:text-zinc-500",
+        env: "text-emerald-500 dark:text-emerald-400",
+        toml: "text-stone-500 dark:text-stone-400",
+        yaml: "text-pink-500 dark:text-pink-400",
+        yml: "text-pink-500 dark:text-pink-400",
     };
 
     return (
@@ -60,7 +61,7 @@ function FileIcon({ extension, className }: { extension: string; className?: str
             strokeWidth="1.5"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className={`h-3.5 w-3.5 ${colors[ext] || "text-zinc-400"} ${className || ""}`}
+            className={`h-3.5 w-3.5 ${colors[ext] || "text-zinc-400 dark:text-zinc-500"} ${className || ""}`}
         >
             <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
             <polyline points="14 2 14 8 20 8" />
@@ -169,29 +170,41 @@ export const FileNode = memo(function FileNode({
     };
 
     return (
-        <li>
+        <li className="relative">
             <button
                 id={`file-node-${node.path.replace(/\//g, "-")}`}
                 onClick={handleClick}
                 onKeyDown={handleKeyDown}
                 className={[
-                    "group flex w-full items-center gap-1.5 rounded-md py-1 pl-2 pr-3 text-left text-[13px] transition-all duration-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/50 focus-visible:ring-offset-1",
+                    "group relative flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/50 focus-visible:ring-offset-1 dark:focus-visible:ring-zinc-500/50",
                     isSelected
-                        ? "bg-zinc-900 text-white"
-                        : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900",
+                        ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
+                        : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
                 ].join(" ")}
-                style={{ paddingLeft: `${depth * 12 + 8}px` }}
+                style={{ paddingLeft: `${depth * 14 + 8}px` }}
                 role="treeitem"
                 aria-selected={isSelected}
                 aria-expanded={isDir ? isOpen : undefined}
                 aria-level={depth + 1}
             >
+                {depth > 0 ? (
+                    <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute bottom-1 left-0 top-1 w-px bg-zinc-200 dark:bg-zinc-800"
+                        style={{ left: `${depth * 14 + 2}px` }}
+                    />
+                ) : null}
                 {isDir && (
-                    <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+                    <span
+                        className={[
+                            "flex h-4 w-4 shrink-0 items-center justify-center",
+                            isSelected ? "text-zinc-500 dark:text-zinc-400" : "text-zinc-400",
+                        ].join(" ")}
+                    >
                         <ChevronIcon isOpen={isOpen} />
                     </span>
                 )}
-                {!isDir && <span className="w-4" />}
+                {!isDir && <span className="w-4 shrink-0" />}
                 
                 <span className="shrink-0">
                     {isDir ? (
@@ -205,14 +218,13 @@ export const FileNode = memo(function FileNode({
                     )}
                 </span>
                 
-                <span className="truncate font-mono text-[12px]">
+                <span className="min-w-0 flex-1 truncate font-mono text-[12px]">
                     {node.name}
                 </span>
             </button>
 
             {isDir && isOpen && sortedChildren.length > 0 && (
-                <ul className="relative">
-                    <li className="absolute left-4 top-0 h-full w-px bg-zinc-200" />
+                <ul className="relative mt-1 flex flex-col gap-0.5">
                     {sortedChildren.map((child) => (
                         <FileNode
                             key={child.path}
