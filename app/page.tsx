@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { Sidebar } from "@/components/layout/Sidebar";
 import { ingestRepo } from "@/lib/domain/ingestRepo";
 import { useStoredRepositories } from "@/lib/hooks/useStoredRepositories";
 
@@ -154,12 +153,6 @@ export default function Home() {
   const { repositories, isLoading: isLoadingRepositories, error: repositoriesError } =
     useStoredRepositories();
 
-  const repositoryItems = repositories.map((repository) => ({
-    label: repository.fullName,
-    href: `/repo/${repository.owner}/${repository.name}`,
-    meta: repository.language ?? `${repository.hydratedFileCount} files`,
-  }));
-
   const handleAnalyze = async () => {
     if (!url.trim()) return;
 
@@ -178,12 +171,6 @@ export default function Home() {
 
   return (
     <div className="flex h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-      <Sidebar
-        appName="Codebase Explorer"
-        navigationItems={[{ label: "Home", href: "/" }]}
-        repositoryItems={repositoryItems}
-      />
-
       <main className="min-w-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-8 lg:px-8">
           <section className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.85fr)]">
