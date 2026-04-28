@@ -30,7 +30,7 @@ export default function SignInPage() {
         router.push("/");
         router.refresh();
       }
-    } catch (err) {
+    } catch {
       setError("An unexpected error occurred");
     } finally {
       setLoading(false);
@@ -100,7 +100,7 @@ export default function SignInPage() {
           </div>
           
           <div className="text-center text-sm">
-            <span className="text-zinc-600 dark:text-zinc-400">Don't have an account? </span>
+            <span className="text-zinc-600 dark:text-zinc-400">Don&apos;t have an account? </span>
             <Link href="/auth/signup" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400">
               Create one
             </Link>
