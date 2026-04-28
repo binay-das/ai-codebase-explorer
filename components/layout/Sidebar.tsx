@@ -9,6 +9,11 @@ type SidebarProps = {
     label: string;
     href: string;
   }>;
+  repositoryItems?: ReadonlyArray<{
+    label: string;
+    href: string;
+    meta?: string | null;
+  }>;
 };
 
 function CodeIcon({ className }: { className?: string }) {
@@ -72,6 +77,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 export function Sidebar({
   appName,
   navigationItems = [],
+  repositoryItems = [],
 }: SidebarProps) {
   const pathname = usePathname();
 
@@ -127,6 +133,49 @@ export function Sidebar({
             );
           })}
         </ul>
+
+        <div className="mb-2 mt-6 px-2">
+          <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400">
+            Pulled Repositories
+          </p>
+        </div>
+        {repositoryItems.length > 0 ? (
+          <ul className="space-y-1">
+            {repositoryItems.map((item) => {
+              const isActive = pathname === item.href;
+
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className={[
+                      "block rounded-lg px-3 py-2 transition-all duration-150",
+                      isActive
+                        ? "bg-zinc-900 text-white shadow-sm dark:bg-zinc-800"
+                        : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/50 dark:hover:text-zinc-100",
+                    ].join(" ")}
+                  >
+                    <p className="truncate text-sm font-medium">{item.label}</p>
+                    {item.meta ? (
+                      <p
+                        className={[
+                          "truncate text-xs",
+                          isActive ? "text-white/70" : "text-zinc-400",
+                        ].join(" ")}
+                      >
+                        {item.meta}
+                      </p>
+                    ) : null}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="px-3 text-xs text-zinc-400">
+            No pulled repositories yet.
+          </p>
+        )}
       </nav>
 
       <div className="border-t border-zinc-100 dark:border-zinc-800/80 px-5 py-4">
