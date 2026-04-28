@@ -5,7 +5,7 @@ let highlighterPromise: Promise<Highlighter> | null = null;
 function getHighlighter(): Promise<Highlighter> {
     if (!highlighterPromise) {
         highlighterPromise = createHighlighter({
-            themes: ["github-light"],
+            themes: ["github-dark"],
             langs: [
                 "typescript", "tsx", "javascript", "jsx",
                 "html", "css", "scss", "json", "yaml", "toml",
@@ -31,7 +31,7 @@ export async function tokenizeCode(
         const lang = availableLangs.includes(language) ? language : "plaintext";
 
         // @ts-expect-error Shiki exposes codeToTokensBase at runtime but omits it from the public type.
-        return await hl.codeToTokensBase(code, { lang, theme: "github-light" });
+        return await hl.codeToTokensBase(code, { lang, theme: "github-dark" });
     } catch {
         return code.split("\n").map((line) => [
             {
