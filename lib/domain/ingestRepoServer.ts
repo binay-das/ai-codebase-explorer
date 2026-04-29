@@ -47,13 +47,17 @@ function toIngestedRepo(repo: RepositoryWithFiles): IngestedRepo {
     };
 }
 
-export async function loadStoredRepoServer(repoUrl: string): Promise<IngestedRepo> {
+export async function loadStoredRepoServer(repoUrl: string, userId: string): Promise<IngestedRepo> {
     const { owner, repo } = parseRepoUrl(repoUrl);
     const repoKey = `${owner}/${repo}`;
 
     const dbRepo = await prisma.repository.findUnique({
         where: { fullName: repoKey },
         include: {
+            users: {
+                where: { id: userId },
+                select: { id: true },
+            },
             files: {
                 orderBy: { path: "asc" },
             },
@@ -62,6 +66,10 @@ export async function loadStoredRepoServer(repoUrl: string): Promise<IngestedRep
 
     if (!dbRepo) {
         throw new Error("Repository has not been ingested yet.");
+    }
+
+    if (dbRepo.users.length === 0) {
+        throw new Error("You don't have access to this repository.");
     }
 
     return toIngestedRepo(dbRepo);
@@ -86,8 +94,6 @@ export async function ingestRepoServer(repoUrl: string, userId: string): Promise
     //     return pendingIngest; // Commented out - unnecessary
     // } // Commented out - unnecessary
 
-    void userId;
-
     // Simple flow: fetch from GitHub, store in DB and S3, return tree
     const repoInfo = await getRepo(owner, repo);
     const rawTree = await getRepoTree(owner, repo, repoInfo.default_branch);
@@ -104,7 +110,7 @@ export async function ingestRepoServer(repoUrl: string, userId: string): Promise
                 forksCount: repoInfo.forks_count,
                 language: repoInfo.language,
                 defaultBranch: repoInfo.default_branch,
-                // users: { connect: { id: userId } }, // Commented out - causes error when user not in DB
+                users: { connect: { id: userId } },
             },
             update: {
                 owner,
@@ -114,7 +120,7 @@ export async function ingestRepoServer(repoUrl: string, userId: string): Promise
                 forksCount: repoInfo.forks_count,
                 language: repoInfo.language,
                 defaultBranch: repoInfo.default_branch,
-                // users: { connect: { id: userId } }, // Commented out - causes error when user not in DB
+                users: { connect: { id: userId } },
             },
             select: {
                 id: true,
@@ -178,95 +184,4 @@ export async function ingestRepoServer(repoUrl: string, userId: string): Promise
     // scheduleRepositoryIndexFromGitHubTree(owner, repo, rawTree); // Commented out - ingestion disabled
 
     return payload;
-
-    // Original complex logic commented out below:
-    /*
-    const request = (async () => {
-        const dbRepo = await prisma.repository.findUnique({
-            where: { fullName: repoKey },
-            include: { files: true }
-        });
-
-        if (dbRepo) {
-            await prisma.repository.update({
-                where: { id: dbRepo.id },
-                data: {
-                    users: { connect: { id: userId } }
-                }
-            });
-
-            const repoInfo: RepoInfo = {
-                name: dbRepo.name,
-                full_name: dbRepo.fullName,
-                description: dbRepo.description,
-                stargazers_count: dbRepo.stargazersCount,
-                forks_count: dbRepo.forksCount,
-                language: dbRepo.language,
-                default_branch: dbRepo.defaultBranch
-            };
-
-            if (await repositoryHasMissingFileContent(dbRepo.id)) {
-                const latestTree = await getRepoTree(owner, repo, dbRepo.defaultBranch);
-                await hydrateRepositoryFileContents(dbRepo.id, owner, repo, latestTree);
-            }
-
-            const rawTree = dbRepo.files.map(f => ({
-                path: f.path,
-                type: f.type === "FILE" ? "blob" : "tree"
-            }));
-
-            const normalizedTree = normalizeTree(rawTree);
-            const payload: IngestedRepo = { repo: repoInfo, tree: normalizedTree };
-
-            repoCache.set(owner, repo, payload);
-            // scheduleRepositoryIndexFromNormalizedTree(owner, repo, normalizedTree); // Commented out - ingestion disabled
-
-            return payload;
-        }
-
-        const repoInfo = await getRepo(owner, repo);
-        const rawTree = await getRepoTree(owner, repo, repoInfo.default_branch);
-        
-        const createdRepo = await prisma.repository.create({
-            data: {
-                owner,
-                name: repo,
-                fullName: repoKey,
-                description: repoInfo.description,
-                stargazersCount: repoInfo.stargazers_count,
-                forksCount: repoInfo.forks_count,
-                language: repoInfo.language,
-                defaultBranch: repoInfo.default_branch,
-                users: { connect: { id: userId } },
-                files: {
-                    create: rawTree.map(item => ({
-                        path: item.path,
-                        name: item.path.split("/").pop() || "",
-                        type: item.type === "blob" ? "FILE" : "DIR",
-                        sha: item.sha,
-                        size: item.size ?? null,
-                    }))
-                }
-            },
-            select: {
-                id: true
-            },
-        });
-
-        await hydrateRepositoryFileContents(createdRepo.id, owner, repo, rawTree);
-
-        const normalizedTree = normalizeTree(rawTree);
-        const payload: IngestedRepo = { repo: repoInfo, tree: normalizedTree };
-
-        repoCache.set(owner, repo, payload);
-        // scheduleRepositoryIndexFromGitHubTree(owner, repo, rawTree); // Commented out - ingestion disabled
-
-        return payload;
-    })().finally(() => {
-        pendingIngests.delete(repoKey);
-    });
-
-    pendingIngests.set(repoKey, request);
-    return request;
-    */
 }

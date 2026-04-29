@@ -14,6 +14,11 @@ export async function GET() {
 
     const repositories = await prisma.repository.findMany({
       where: {
+        users: {
+          some: {
+            id: session.user.id,
+          },
+        },
         files: {
           some: {
             storageKey: {

@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
         const result = body.refresh
             ? await ingestRepoServer(repoUrl, session.user.id)
-            : await loadStoredRepoServer(repoUrl);
+            : await loadStoredRepoServer(repoUrl, session.user.id);
 
         return NextResponse.json(result);
     } catch (error) {
